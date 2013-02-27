@@ -16,7 +16,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 
 /**
  * Simple servlet allowing the solr server to check if a document can be accessed by a given user before returning
@@ -49,21 +48,13 @@ public class PermissionCheckServlet extends HttpServlet {
         boolean hasAccess = false;
         String userId = req.getParameter("userId");
         String reference = req.getParameter("reference");
-        ObjectOutputStream oos = null;
 
         try {
-            oos = new ObjectOutputStream(resp.getOutputStream());
             hasAccess = checkPermission(userId, reference);
         } catch (Exception e) {
             logger.error("Couldn't check '" + userId + "' permission to access '" + reference + "'.", e);
         } finally {
-            if (oos != null)
-                try {
-                    oos.writeBoolean(hasAccess);
-                    oos.flush();
-                } finally {
-                    oos.close();
-                }
+            resp.getWriter().write(Boolean.toString(hasAccess));
         }
     }
 
