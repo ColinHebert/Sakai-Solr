@@ -16,6 +16,7 @@ import org.sakaiproject.search.notification.SearchNotificationAction;
 import org.sakaiproject.search.producer.ContentProducerFactory;
 import org.sakaiproject.search.response.filter.SearchItemFilter;
 import org.sakaiproject.search.solr.response.SolrSearchList;
+import org.sakaiproject.tool.api.SessionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,7 @@ public class SolrSearchService implements SearchService {
     private ContentProducerFactory contentProducerFactory;
     private List<String> triggerFunctions;
     private NotificationService notificationService;
+    private SessionManager sessionManager;
     /**
      * Filter applied to search results.
      * <p>
@@ -95,6 +97,8 @@ public class SolrSearchService implements SearchService {
             throws InvalidSearchQueryException {
         try {
             SolrQuery query = new SolrQuery();
+            String currentUserId = sessionManager.getCurrentSessionUserId();
+            String permissionService = "";
 
             query.setStart(start);
             query.setRows(end - start);
@@ -107,6 +111,8 @@ public class SolrSearchService implements SearchService {
 
             if (siteIds != null && !siteIds.isEmpty())
                 query.addFilterQuery(createSitesFilterQuery(siteIds));
+
+            query.addFilterQuery("{!sakai userId=" + currentUserId + " permissionService=" + permissionService + "}");
 
             if (logger.isDebugEnabled())
                 logger.debug("Searching with Solr: " + searchTerms);
@@ -363,5 +369,9 @@ public class SolrSearchService implements SearchService {
 
     public void setContentProducerFactory(ContentProducerFactory contentProducerFactory) {
         this.contentProducerFactory = contentProducerFactory;
+    }
+
+    public void setSessionManager(SessionManager sessionManager) {
+        this.sessionManager = sessionManager;
     }
 }

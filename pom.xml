@@ -50,6 +50,7 @@
     <modules>
         <module>impl</module>
         <module>pack</module>
+        <module>permission</module>
     </modules>
 
     <dependencyManagement>
