@@ -14,7 +14,6 @@ import org.sakaiproject.search.api.*;
 import org.sakaiproject.search.model.SearchBuilderItem;
 import org.sakaiproject.search.notification.SearchNotificationAction;
 import org.sakaiproject.search.producer.ContentProducerFactory;
-import org.sakaiproject.search.response.filter.SearchItemFilter;
 import org.sakaiproject.search.solr.response.SolrSearchList;
 import org.sakaiproject.tool.api.SessionManager;
 import org.slf4j.Logger;
@@ -44,18 +43,6 @@ public class SolrSearchService implements SearchService {
     private List<String> triggerFunctions;
     private NotificationService notificationService;
     private SessionManager sessionManager;
-    /**
-     * Filter applied to search results.
-     * <p>
-     * By default the filter will let everything go through without any filtering.
-     * </p>
-     */
-    private SearchItemFilter searchItemFilter = new SearchItemFilter() {
-        @Override
-        public SearchResult filter(SearchResult result) {
-            return result;
-        }
-    };
 
     /**
      * Initialises the search service (as long is {@link #isEnabled()} is true) to capture and process event affecting
@@ -118,7 +105,7 @@ public class SolrSearchService implements SearchService {
 
             query.setQuery(searchTerms);
             QueryResponse rsp = solrServer.query(query);
-            return new SolrSearchList(rsp, searchItemFilter, contentProducerFactory);
+            return new SolrSearchList(rsp, contentProducerFactory);
         } catch (SolrServerException e) {
             throw new InvalidSearchQueryException("Failed to parse Query", e);
         }
@@ -352,10 +339,6 @@ public class SolrSearchService implements SearchService {
 
     public void setSearchIndexBuilder(SearchIndexBuilder searchIndexBuilder) {
         this.searchIndexBuilder = searchIndexBuilder;
-    }
-
-    public void setSearchItemFilter(SearchItemFilter searchItemFilter) {
-        this.searchItemFilter = searchItemFilter;
     }
 
     public void setTriggerFunctions(List<String> triggerFunctions) {

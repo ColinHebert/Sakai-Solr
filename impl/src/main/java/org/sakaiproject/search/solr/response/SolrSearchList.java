@@ -8,7 +8,6 @@ import org.sakaiproject.search.api.SearchList;
 import org.sakaiproject.search.api.SearchResult;
 import org.sakaiproject.search.api.SearchService;
 import org.sakaiproject.search.producer.ContentProducerFactory;
-import org.sakaiproject.search.response.filter.SearchItemFilter;
 
 import java.util.*;
 
@@ -24,7 +23,7 @@ public class SolrSearchList extends ForwardingList<SearchResult> implements Sear
     private final QueryResponse rsp;
     private final int start;
 
-    public SolrSearchList(QueryResponse rsp, SearchItemFilter filter, ContentProducerFactory contentProducerFactory) {
+    public SolrSearchList(QueryResponse rsp, ContentProducerFactory contentProducerFactory) {
         this.rsp = rsp;
 
         //Get the 'start' index of the result list. If not set, use 0
@@ -59,7 +58,7 @@ public class SolrSearchList extends ForwardingList<SearchResult> implements Sear
 
             solrResult.setContentProducer(contentProducerFactory.getContentProducerForElement(reference));
 
-            results.add(filter.filter(solrResult));
+            results.add(solrResult);
         }
         this.solrResults = Collections.unmodifiableList(results);
     }

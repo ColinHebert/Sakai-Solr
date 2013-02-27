@@ -11,11 +11,6 @@
         <property name="notificationService" ref="org.sakaiproject.event.api.NotificationService"/>
         <property name="searchIndexBuilder" ref="org.sakaiproject.search.solr.SolrSearchIndexBuilder"/>
         <property name="solrServer" ref="solrLookupServer"/>
-        <property name="searchItemFilter">
-            <bean class="org.sakaiproject.search.response.filter.SecuritySearchFilter">
-                <property name="contentProducerFactory" ref="org.sakaiproject.search.producer.ContentProducerFactory"/>
-            </bean>
-        </property>
         <property name="contentProducerFactory" ref="org.sakaiproject.search.producer.ContentProducerFactory"/>
         <property name="sessionManager" ref="org.sakaiproject.tool.api.SessionManager"/>
     </bean>
