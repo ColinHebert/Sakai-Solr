@@ -98,7 +98,6 @@ public class SolrSearchService implements SearchService {
         try {
             SolrQuery query = new SolrQuery();
             String currentUserId = sessionManager.getCurrentSessionUserId();
-            String permissionService = "";
 
             query.setStart(start);
             query.setRows(end - start);
@@ -112,7 +111,7 @@ public class SolrSearchService implements SearchService {
             if (siteIds != null && !siteIds.isEmpty())
                 query.addFilterQuery(createSitesFilterQuery(siteIds));
 
-            query.addFilterQuery("{!sakai userId=" + currentUserId + " permissionService=" + permissionService + "}");
+            query.addFilterQuery("{!sakai userId=" + currentUserId + "}");
 
             if (logger.isDebugEnabled())
                 logger.debug("Searching with Solr: " + searchTerms);

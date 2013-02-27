@@ -1,7 +1,10 @@
 <solr persistent="true" sharedLib="lib">
     <cores adminPath="/admin/cores">
         <!-- The core for general Sakai search -->
-        <core name="search" instanceDir="search"/>
+        <core name="search" instanceDir="search">
+            <!-- Property used to identify which service will allow to check user's permissions -->
+            <property name="sakai.permission.service"
+                value="http://localhost:8080/sakai/permissioncheck"/>
+        </core>
     </cores>
 </solr>
-

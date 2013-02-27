@@ -48,7 +48,10 @@
     </requestDispatcher>
 
     <!-- QueryParser allowing to search by authorisation of a user to access a document -->
-    <queryParser name="sakai" class="org.sakaiproject.search.solr.permission.filter.SakaiPermissionQParserPlugin"/>
+    <queryParser name="sakai"
+        class="org.sakaiproject.search.solr.permission.filter.SakaiPermissionQParserPlugin">
+        <str name="permissionService">${sakai.permission.service}</str>
+    </queryParser>
 
     <!-- Main SearchHandler -->
     <requestHandler name="/select" class="solr.SearchHandler">
