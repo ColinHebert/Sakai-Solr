@@ -219,7 +219,9 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <phase>test</phase>
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                        </configuration>
                         <goals>
                             <goal>check</goal>
                         </goals>
