@@ -5,7 +5,7 @@ Sakai-Solr is an implementation of [Sakai Search](https://confluence.sakaiprojec
 implementation.
 
 
-[![Build Status](https://secure.travis-ci.org/ColinHebert/Sakai-Solr.png)](http://travis-ci.org/ColinHebert/Sakai-Solr)
+[![Build Status](https://secure.travis-ci.org/ColinHebert/Sakai-Solr.png?branch=search-1.5.x)](http://travis-ci.org/ColinHebert/Sakai-Solr)
 
 ### Structure
 
