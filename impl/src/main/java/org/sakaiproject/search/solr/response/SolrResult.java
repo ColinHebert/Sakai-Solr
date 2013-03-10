@@ -6,7 +6,6 @@ import org.apache.solr.common.SolrDocument;
 import org.sakaiproject.search.api.*;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 import static org.sakaiproject.search.solr.response.TermVectorExtractor.TermInfo;
@@ -139,12 +138,7 @@ public class SolrResult implements SearchResult {
         sb.append(" sid=\"").append(StringEscapeUtils.escapeXml(getId())).append("\" ");
         sb.append(" site=\"").append(StringEscapeUtils.escapeXml(getSiteId())).append("\" ");
         sb.append(" reference=\"").append(StringEscapeUtils.escapeXml(getReference())).append("\" ");
-        try {
-            String title = new String(Base64.encodeBase64(getTitle().getBytes("UTF-8")), "UTF-8");
-            sb.append(" title=\"").append(title).append("\" ");
-        } catch (UnsupportedEncodingException e) {
-            sb.append(" title=\"").append(StringEscapeUtils.escapeXml(getTitle())).append("\" ");
-        }
+        sb.append(" title=\"").append(Base64.encodeBase64String(getTitle().getBytes())).append("\" ");
         sb.append(" tool=\"").append(StringEscapeUtils.escapeXml(getTool())).append("\" ");
         sb.append(" url=\"").append(StringEscapeUtils.escapeXml(getUrl())).append("\" />");
     }
