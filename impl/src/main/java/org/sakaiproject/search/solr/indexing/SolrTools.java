@@ -333,16 +333,18 @@ public class SolrTools {
     }
 
     /**
-     * Gets the reference of every indexed document for a specific site.
+     * Gets the references of every indexed document still available for a specific site.
      * <p>
-     * This method is most commonly used to refresh a site.
+     * This method is most commonly used to refresh a site.<br />
+     * A document could be in the index while not being available within sakai, in that case the reference won't be
+     * returned.
      * </p>
      *
      * @param siteId site in which the documents are.
-     * @return a queue of every reference related to a site.
+     * @return a queue of every references of documents belonging to a site.
      * @throws SolrServerException thrown if the query to get references failed.
      */
-    public Queue<String> getReferences(String siteId) throws SolrServerException {
+    public Queue<String> getValidReferences(String siteId) throws SolrServerException {
         if (logger.isDebugEnabled())
             logger.debug("Obtaining indexed elements for site: '" + siteId + "'");
         SolrQuery query = new SolrQuery()
@@ -354,7 +356,9 @@ public class SolrTools {
         SolrDocumentList results = solrServer.query(query).getResults();
         Queue<String> references = new LinkedList<String>();
         for (SolrDocument document : results) {
-            references.add((String) document.getFieldValue(SearchService.FIELD_REFERENCE));
+            String reference = (String) document.getFieldValue(SearchService.FIELD_REFERENCE);
+            if (contentProducerFactory.getContentProducerForElement(reference) != null)
+                references.add(reference);
         }
         return references;
     }

@@ -5,7 +5,6 @@ import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrException;
-import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.search.api.SearchService;
 import org.sakaiproject.search.indexing.DefaultTask;
 import org.sakaiproject.search.indexing.Task;
@@ -33,6 +32,7 @@ public class SolrTaskHandler implements TaskHandler {
     private static final Logger logger = LoggerFactory.getLogger(SolrTaskHandler.class);
     private SolrServer solrServer;
     private SolrTools solrTools;
+    private ThreadLocalManager threadLocalManager;
 
     @Override
     public void executeTask(Task task) {
@@ -166,7 +166,7 @@ public class SolrTaskHandler implements TaskHandler {
             //Get the currently indexed resources for this site
             Queue<String> references;
             try {
-                references = solrTools.getReferences(siteId);
+                references = solrTools.getValidReferences(siteId);
             } catch (Exception e) {
                 Task task = new DefaultTask(REFRESH_SITE, actionDate).setProperty(DefaultTask.SITE_ID, siteId);
                 throw wrapException(e, "Couldn't obtain the list of documents to refresh for '" + siteId + "'", task);
@@ -190,7 +190,6 @@ public class SolrTaskHandler implements TaskHandler {
             if (!nthe.isEmpty()) throw nthe;
         } finally {
             //Clean up the localThread after each site
-            ThreadLocalManager threadLocalManager = (ThreadLocalManager) ComponentManager.get(ThreadLocalManager.class);
             threadLocalManager.clear();
         }
     }
@@ -342,5 +341,9 @@ public class SolrTaskHandler implements TaskHandler {
 
     public void setSolrTools(SolrTools solrTools) {
         this.solrTools = solrTools;
+    }
+
+    public void setThreadLocalManager(ThreadLocalManager threadLocalManager) {
+        this.threadLocalManager = threadLocalManager;
     }
 }

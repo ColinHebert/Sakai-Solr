@@ -39,6 +39,7 @@
           class="org.sakaiproject.search.solr.indexing.SolrTaskHandler">
         <property name="solrServer" ref="solrIndexingServer"/>
         <property name="solrTools" ref="solrTools"/>
+        <property name="threadLocalManager" ref="org.sakaiproject.thread_local.api.ThreadLocalManager"/>
     </bean>
 
     <bean id="solrTools" class="org.sakaiproject.search.solr.indexing.SolrTools" init-method="init">
