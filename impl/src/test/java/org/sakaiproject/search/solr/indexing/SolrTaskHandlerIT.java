@@ -290,7 +290,6 @@ public class SolrTaskHandlerIT extends AbstractSolrTestCase {
         }
     }
 
-
     private void assertDocumentMatches(SolrDocument document, Date actionDate) {
         assertDocumentMatches(document);
         assertThat((Date) document.getFieldValue(SearchService.DATE_STAMP), equalTo(actionDate));

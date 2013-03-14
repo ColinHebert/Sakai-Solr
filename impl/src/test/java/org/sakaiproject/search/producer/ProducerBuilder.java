@@ -4,6 +4,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.sakaiproject.event.api.Event;
 import org.sakaiproject.search.api.EntityContentProducer;
+import org.sakaiproject.search.model.SearchBuilderItem;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -28,7 +29,7 @@ public final class ProducerBuilder {
     private final EntityContentProducer contentProducer;
     private final Map<String, Document> documentReferenceToDocument = new HashMap<String, Document>();
     private final Map<String, Set<String>> siteToDocuments = new HashMap<String, Set<String>>();
-    private final Set<String> supportedEvents = new HashSet<String>();
+    private final Map<String, ActionType> supportedEvents = new HashMap<String, ActionType>();
 
     private ProducerBuilder(ProducerType producerType, String toolName) {
         if (producerType == ProducerType.STREAM) {
@@ -42,7 +43,13 @@ public final class ProducerBuilder {
         when(contentProducer.matches(any(Event.class))).then(new Answer<Boolean>() {
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
                 Event event = (Event) invocation.getArguments()[0];
-                return supportedEvents.contains(event.getEvent());
+                return supportedEvents.containsKey(event.getEvent());
+            }
+        });
+        when(contentProducer.getAction(any(Event.class))).then(new Answer<Integer>() {
+            public Integer answer(InvocationOnMock invocation) throws Throwable {
+                Event event = (Event) invocation.getArguments()[0];
+                return supportedEvents.get(event.getEvent()).getActionId();
             }
         });
         when(contentProducer.matches(anyString())).then(new Answer<Boolean>() {
@@ -302,11 +309,12 @@ public final class ProducerBuilder {
     /**
      * Adds a new event type to handle.
      *
-     * @param eventType name of the event to handle with the EntityContentProducer.
+     * @param eventType  name of the event to handle with the EntityContentProducer.
+     * @param actionType type of action associated with that event.
      * @return the current builder for chained calls.
      */
-    public ProducerBuilder addEvent(String eventType) {
-        supportedEvents.add(eventType);
+    public ProducerBuilder addEvent(String eventType, ActionType actionType) {
+        supportedEvents.put(eventType, actionType);
         return this;
     }
 
@@ -358,8 +366,8 @@ public final class ProducerBuilder {
      *
      * @return every supported event type.
      */
-    public Set<String> getEvents() {
-        return Collections.unmodifiableSet(supportedEvents);
+    public Map<String, ActionType> getEvents() {
+        return Collections.unmodifiableMap(supportedEvents);
     }
 
     /**
@@ -388,6 +396,23 @@ public final class ProducerBuilder {
         STRING,
         READER,
         STREAM
+    }
+
+    public static enum ActionType {
+        UNKNOWN(SearchBuilderItem.ACTION_UNKNOWN),
+        ADD(SearchBuilderItem.ACTION_ADD),
+        DELETE(SearchBuilderItem.ACTION_DELETE),
+        REBUILD(SearchBuilderItem.ACTION_REBUILD),
+        REFRESH(SearchBuilderItem.ACTION_REFRESH);
+        private final int actionId;
+
+        private ActionType(int actionId) {
+            this.actionId = actionId;
+        }
+
+        public int getActionId() {
+            return actionId;
+        }
     }
 
     public final static class Document implements Cloneable {
