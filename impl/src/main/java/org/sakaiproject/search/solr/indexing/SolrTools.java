@@ -2,17 +2,12 @@ package org.sakaiproject.search.solr.indexing;
 
 import com.google.common.collect.Iterators;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.request.ContentStreamUpdateRequest;
-import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
-import org.apache.solr.common.SolrInputField;
-import org.apache.solr.common.util.ContentStreamBase;
 import org.apache.solr.common.util.DateUtil;
 import org.apache.solr.common.util.NamedList;
 import org.apache.tika.Tika;
@@ -31,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Reader;
 import java.util.*;
 
 /**
@@ -40,91 +35,84 @@ import java.util.*;
  * @author Colin Hebert
  */
 public class SolrTools {
-    private static final String LITERAL = "literal.";
     private static final String PROPERTY_PREFIX = "property_";
     private static final String UPREFIX = PROPERTY_PREFIX + "tika_";
-    private static final String SOLRCELL_PATH = "/update/extract";
     private static final Logger logger = LoggerFactory.getLogger(SolrTools.class);
     private SiteService siteService;
     private SearchIndexBuilder searchIndexBuilder;
     private ContentProducerFactory contentProducerFactory;
     private SolrServer solrServer;
-    private boolean tikaEnabled;
     private Tika tika;
 
     /**
      * Initialises tika if needed.
      */
     public void init() {
-        if (tikaEnabled)
-            tika = new Tika();
+        tika = new Tika();
     }
 
     /**
-     * Generates a {@link SolrRequest} to index the given resource thanks to its {@link EntityContentProducer}.
+     * Generates a {@link SolrInputDocument} to index the given resource thanks to its {@link EntityContentProducer}.
      *
      * @param reference  resource to index
      * @param actionDate date of creation of the indexation task
-     * @return an update request for the resource
+     * @return a document ready to be indexed
      */
-    public SolrRequest toSolrRequest(String reference, Date actionDate) {
+    public SolrInputDocument toSolrDocument(String reference, Date actionDate) {
         EntityContentProducer contentProducer = contentProducerFactory.getContentProducerForElement(reference);
         if (logger.isDebugEnabled())
-            logger.debug("Create a solr request to add '" + reference + "' to the index");
-        SolrRequest request;
-        SolrInputDocument document = generateBaseSolrDocument(reference, actionDate, contentProducer);
-        if (logger.isDebugEnabled())
-            logger.debug("Base solr document created ." + document);
+            logger.debug("Create a solr document to add '" + reference + "' to the index.");
 
-        //Prepare the actual request based on a stream/reader/string
-        if (contentProducer instanceof BinaryEntityContentProducer) {
-            BinaryEntityContentProducer binaryContentProducer = (BinaryEntityContentProducer) contentProducer;
-            //Depending on whether Tika is enabled or not, rely on solr cell.
-            if (!tikaEnabled) {
-                if (logger.isDebugEnabled())
-                    logger.debug("Create a SolrCell request");
-                request = prepareSolrCellRequest(reference, binaryContentProducer, document);
-            } else {
-                if (logger.isDebugEnabled())
-                    logger.debug("Create a request based on a document parsed by Tika");
-                setDocumentTikaProperties(reference, document, binaryContentProducer);
-                request = new UpdateRequest().add(document);
-            }
-        } else if (contentProducer.isContentFromReader(reference)) {
-            if (logger.isDebugEnabled())
-                logger.debug("Create a request with a Reader");
-            String content;
-            content = getContentFromReader(reference, contentProducer);
-            document.setField(SearchService.FIELD_CONTENTS, content);
-            request = new UpdateRequest().add(document);
-        } else {
-            if (logger.isDebugEnabled())
-                logger.debug("Create a request based on a String");
-            document.setField(SearchService.FIELD_CONTENTS, contentProducer.getContent(reference));
-            request = new UpdateRequest().add(document);
+        SolrInputDocument document = new SolrInputDocument();
+
+        //The date_stamp field should be automatically set by solr (default="NOW"), if it isn't set here
+        document.addField(SearchService.DATE_STAMP, actionDate);
+        document.addField(SearchService.FIELD_REFERENCE, reference);
+        document.addField(SearchService.FIELD_CONTAINER, contentProducer.getContainer(reference));
+        document.addField(SearchService.FIELD_TYPE, contentProducer.getType(reference));
+        document.addField(SearchService.FIELD_TITLE, contentProducer.getTitle(reference));
+        document.addField(SearchService.FIELD_TOOL, contentProducer.getTool());
+        document.addField(SearchService.FIELD_URL, contentProducer.getUrl(reference));
+        document.addField(SearchService.FIELD_SITEID, contentProducer.getSiteId(reference));
+
+        //Add the custom properties
+        Map<String, Collection<String>> properties = extractCustomProperties(reference, contentProducer);
+        for (Map.Entry<String, Collection<String>> entry : properties.entrySet()) {
+            document.addField(PROPERTY_PREFIX + entry.getKey(), entry.getValue());
         }
 
-        return request;
+        //Add the content
+        if (contentProducer instanceof BinaryEntityContentProducer) {
+            // A tika digested document adds content and metadata to the document.
+            setDocumentTikaProperties(reference, document, (BinaryEntityContentProducer) contentProducer);
+        } else {
+            String content;
+            if (contentProducer.isContentFromReader(reference))
+                content = readerToString(contentProducer.getContentReader(reference));
+            else
+                content = contentProducer.getContent(reference);
+            document.setField(SearchService.FIELD_CONTENTS, stripNonCharCodepoints(content));
+        }
+
+        return document;
     }
 
     /**
-     * Gets the content of a document from a Reader.
+     * Gets the content of a document from a Reader and converts it to a String.
      *
-     * @param reference       document from which the content must be extracted
-     * @param contentProducer content producer for the document
-     * @return the content of the document. If there is an exception
+     * @param reader content of the document as a Reader
+     * @return the content of the document.
      */
-    private String getContentFromReader(String reference, EntityContentProducer contentProducer) {
+    private String readerToString(Reader reader) {
         StringBuffer sb = new StringBuffer();
         try {
-            BufferedReader br = new BufferedReader(contentProducer.getContentReader(reference));
+            BufferedReader br = new BufferedReader(reader);
             String tmp;
             while ((tmp = br.readLine()) != null) {
                 sb.append(tmp);
             }
         } catch (IOException e) {
-            logger.error("An exception occurred while converting the content of "
-                    + "'" + reference + "' from a Reader to a String", e);
+            logger.error("Couldn't extract the content from a reader.", e);
             sb = new StringBuffer();
         }
         return sb.toString();
@@ -158,70 +146,6 @@ public class SolrTools {
         } catch (Exception e) {
             logger.warn("Couldn't parse the content of '" + reference + "'", e);
         }
-    }
-
-    /**
-     * Creates a solrDocument for a specific resource.
-     *
-     * @param reference       resource used to generate the document
-     * @param contentProducer contentProducer in charge of extracting the data
-     * @return a SolrDocument
-     */
-    private SolrInputDocument generateBaseSolrDocument(String reference, Date actionDate,
-                                                       EntityContentProducer contentProducer) {
-        SolrInputDocument document = new SolrInputDocument();
-
-        //The date_stamp field should be automatically set by solr (default="NOW"), if it isn't set here
-        document.addField(SearchService.DATE_STAMP, format(actionDate));
-        document.addField(SearchService.FIELD_REFERENCE, reference);
-        document.addField(SearchService.FIELD_CONTAINER, contentProducer.getContainer(reference));
-        document.addField(SearchService.FIELD_TYPE, contentProducer.getType(reference));
-        document.addField(SearchService.FIELD_TITLE, contentProducer.getTitle(reference));
-        document.addField(SearchService.FIELD_TOOL, contentProducer.getTool());
-        document.addField(SearchService.FIELD_URL, contentProducer.getUrl(reference));
-        document.addField(SearchService.FIELD_SITEID, contentProducer.getSiteId(reference));
-
-        //Add the custom properties
-        Map<String, Collection<String>> properties = extractCustomProperties(reference, contentProducer);
-        for (Map.Entry<String, Collection<String>> entry : properties.entrySet()) {
-            document.addField(PROPERTY_PREFIX + entry.getKey(), entry.getValue());
-        }
-        return document;
-    }
-
-    /**
-     * Prepares a request toward SolrCell to parse a binary document.
-     * <p>
-     * The given document will be send in its binary form to apache tika to be analysed and stored in the index.
-     * </p>
-     *
-     * @param reference       name of the document
-     * @param contentProducer associated content producer providing a binary stream of data
-     * @param document        {@link SolrInputDocument} used to prepare index fields
-     * @return a solrCell request
-     */
-    private SolrRequest prepareSolrCellRequest(final String reference,
-                                               final BinaryEntityContentProducer contentProducer,
-                                               SolrInputDocument document) {
-        //Send to tika
-        ContentStreamUpdateRequest contentStreamUpdateRequest = new ContentStreamUpdateRequest(SOLRCELL_PATH);
-        contentStreamUpdateRequest.setParam("fmap.content", SearchService.FIELD_CONTENTS);
-        contentStreamUpdateRequest.setParam("uprefix", UPREFIX);
-        ContentStreamBase contentStreamBase = new ContentStreamBase() {
-            @Override
-            public InputStream getStream() throws IOException {
-                return contentProducer.getContentStream(reference);
-            }
-        };
-        contentStreamUpdateRequest.addContentStream(contentStreamBase);
-        for (SolrInputField field : document) {
-            contentStreamUpdateRequest.setParam("fmap.sakai_" + field.getName(), field.getName());
-            for (Object o : field) {
-                //The "sakai_" part is due to SOLR-3386, this fix should be temporary
-                contentStreamUpdateRequest.setParam(LITERAL + "sakai_" + field.getName(), o.toString());
-            }
-        }
-        return contentStreamUpdateRequest;
     }
 
     /**
@@ -300,6 +224,37 @@ public class SolrTools {
         if (logger.isDebugEnabled())
             logger.debug("Transformed the '" + propertyName + "' property into: '" + sb + "'");
         return sb.toString();
+    }
+
+    /**
+     * Removes non-characters and non-printable characters from a String.
+     *
+     * @param input content containing non-characters or non-printable characters
+     * @return a String stripped from unuseable characters.
+     */
+    private String stripNonCharCodepoints(String input) {
+        StringBuilder retVal = new StringBuilder();
+        char ch;
+
+        for (int i = 0; i < input.length(); i++) {
+            ch = input.charAt(i);
+            //CHECKSTYLE.OFF: MagicNumber - Characters are full of magic number, there is nothing to check here.
+
+            // Strip all non-characters and non-printable control characters except tabulator,
+            // new line and carriage return
+            // See http://unicode.org/cldr/utility/list-unicodeset.jsp?a=[:Noncharacter_Code_Point=True:]
+            if (ch % 0x10000 != 0xffff && // 0xffff - 0x10ffff range step 0x10000
+                    ch % 0x10000 != 0xfffe && // 0xfffe - 0x10fffe range
+                    (ch <= 0xfdd0 || ch >= 0xfdef) && // 0xfdd0 - 0xfdef
+                    (ch > 0x1F || ch == 0x9 || ch == 0xa || ch == 0xd)) {
+
+                retVal.append(ch);
+            }
+
+            //CHECKSTYLE.ON: MagicNumber
+        }
+
+        return retVal.toString();
     }
 
     /**
@@ -385,28 +340,6 @@ public class SolrTools {
     }
 
     /**
-     * Checks if a document is outdated (not updated since the current time).
-     * <p>
-     * As tasks are executed in different threads, race conditions could appear.<br />
-     * To avoid that, verify if the document in the index isn't already more recent than the current task.
-     * </p>
-     *
-     * @param reference   reference of the document.
-     * @param currentDate creation date of the currently executed task.
-     * @return true if the document is outdated (and should be updated), false otherwise.
-     * @throws SolrServerException thrown if the query to get the referenced document from the index failed.
-     */
-    public boolean isDocumentOutdated(String reference, Date currentDate) throws SolrServerException {
-        if (logger.isDebugEnabled())
-            logger.debug("Obtaining creation date for document '" + reference + "'");
-        SolrQuery query = new SolrQuery()
-                .setQuery(SearchService.FIELD_REFERENCE + ":" + ClientUtils.escapeQueryChars(reference) + " AND "
-                        + SearchService.DATE_STAMP + ":[" + format(currentDate) + " TO *]")
-                .setRows(0);
-        return solrServer.query(query).getResults().getNumFound() == 0;
-    }
-
-    /**
      * Checks whether a site should be indexed or not.
      *
      * @param site site to check.
@@ -475,9 +408,5 @@ public class SolrTools {
 
     public void setSolrServer(SolrServer solrServer) {
         this.solrServer = solrServer;
-    }
-
-    public void setTikaEnabled(boolean tikaEnabled) {
-        this.tikaEnabled = tikaEnabled;
     }
 }

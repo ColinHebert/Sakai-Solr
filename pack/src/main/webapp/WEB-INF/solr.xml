@@ -47,7 +47,6 @@
         <property name="searchIndexBuilder" ref="org.sakaiproject.search.api.SearchIndexBuilder"/>
         <property name="solrServer" ref="solrLookupServer"/>
         <property name="contentProducerFactory" ref="org.sakaiproject.search.producer.ContentProducerFactory"/>
-        <property name="tikaEnabled" value="true"/>
     </bean>
 
     <bean id="solrLookupServer" class="org.sakaiproject.search.solr.util.SolrServerAdapter" init-method="init" destroy-method="shutdown"/>

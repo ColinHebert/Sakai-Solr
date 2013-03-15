@@ -67,6 +67,9 @@
         </arr>
     </requestHandler>
 
+    <!-- Realtime search -->
+    <requestHandler name="/get" class="solr.RealTimeGetHandler"/>
+
     <!-- Search handler for test/admin purposes -->
     <requestHandler name="/query" class="solr.SearchHandler">
         <lst name="defaults">
