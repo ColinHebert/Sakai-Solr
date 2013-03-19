@@ -66,6 +66,8 @@ public abstract class WaitingTaskRunner implements TaskRunner {
 
             try {
                 taskHandler.executeTask(task);
+                // If there is no exceptions, reset the timer
+                waitingTime = BASE_WAITING_TIME;
             } catch (NestedTaskHandlingException e) {
                 logger.warn("Some exceptions happened during the execution of '" + task + "'.");
                 unfoldNestedTaskException(e);
@@ -76,12 +78,9 @@ public abstract class WaitingTaskRunner implements TaskRunner {
                 logger.error("Couldn't execute task '" + task + "'.", e);
             }
 
+            // A TemporaryTaskException occurred, stop everything for a while (so the search server can recover)
             if (taskRunnerLock.isHeldByCurrentThread())
-                // A TemporaryTaskException occurred, stop everything for a while (so the search server can recover)
                 initiateLockdown();
-            else
-                // If there is no exceptions, reset the timer
-                waitingTime = BASE_WAITING_TIME;
 
         } catch (InterruptedException e) {
             logger.error("Thread interrupted while trying to do '" + task + "'.", e);
