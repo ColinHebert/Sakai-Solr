@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class WaitingTaskRunner implements TaskRunner {
     private static final long BASE_WAITING_TIME = 10;
-    private static final long DEFAULT_MAXIMUM_WAITING_TIME = 5 * 60 * BASE_WAITING_TIME;
+    private static final long DEFAULT_MAXIMUM_WAITING_TIME = 5 * 60 * 1000;
     private static final Logger logger = LoggerFactory.getLogger(WaitingTaskRunner.class);
     private static final SecurityAdvisor OPEN_SECURITY_ADVISOR = new SecurityAdvisor() {
         @Override
@@ -55,6 +55,7 @@ public abstract class WaitingTaskRunner implements TaskRunner {
     private TaskHandler taskHandler;
     private SecurityService securityService;
     private IndexQueueing indexQueueing;
+    private ThreadLocalManager threadLocalManager;
 
     @Override
     public void runTask(Task task) {
@@ -90,7 +91,6 @@ public abstract class WaitingTaskRunner implements TaskRunner {
             securityService.popAdvisor(OPEN_SECURITY_ADVISOR);
 
             // Clean up the localThread after each task
-            ThreadLocalManager threadLocalManager = (ThreadLocalManager) ComponentManager.get(ThreadLocalManager.class);
             threadLocalManager.clear();
 
             // A TemporaryTaskException occurred and the waiting time is now passed (or an exception killed it)
@@ -168,7 +168,9 @@ public abstract class WaitingTaskRunner implements TaskRunner {
     private void handleTemporaryTaskHandlingException(TemporaryTaskHandlingException tthe) {
         // A TemporaryTaskHandlingException means that the locking system must be initialised
         // If it's already initialised, carry on
-        taskRunnerLock.tryLock();
+        // Check that the lock isn't already held by the current thread (do not lock twice!)
+        if (!taskRunnerLock.isHeldByCurrentThread())
+            taskRunnerLock.tryLock();
         logger.info("A task failed because of a temporary exception. "
                 + "'" + tthe.getNewTask() + "' will be executed later", tthe);
         indexQueueing.addTaskToQueue(tthe.getNewTask());
@@ -188,5 +190,9 @@ public abstract class WaitingTaskRunner implements TaskRunner {
 
     public void setIndexQueueing(IndexQueueing indexQueueing) {
         this.indexQueueing = indexQueueing;
+    }
+
+    public void setThreadLocalManager(ThreadLocalManager threadLocalManager) {
+        this.threadLocalManager = threadLocalManager;
     }
 }

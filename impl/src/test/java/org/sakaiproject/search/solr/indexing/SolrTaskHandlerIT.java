@@ -184,7 +184,7 @@ public class SolrTaskHandlerIT extends AbstractSolrTestCase {
      * Attempts to index an already indexed site containing multiple documents (and had some documents removed).
      * <p>
      * Checks that the expected number of documents were indexed.<br />
-     * Checks that the old/nonexistant documents were removed.<br />
+     * Checks that the old/nonexistent documents were removed.<br />
      * </p>
      *
      * @throws Exception any exception.

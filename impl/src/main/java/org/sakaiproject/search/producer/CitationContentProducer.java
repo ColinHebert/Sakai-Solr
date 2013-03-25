@@ -32,6 +32,7 @@ public class CitationContentProducer extends ContentHostingContentProducer {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public String getContent(String reference) {
         try {
             String citationCollectionId = new String(contentHostingService.getResource(getId(reference)).getContent());

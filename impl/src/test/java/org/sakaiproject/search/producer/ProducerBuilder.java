@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 /**
  * Tool allowing to easily create an {@link EntityContentProducer} following some rules.
  * <p>
- * This class isn't thread safe and should never be used in a multithreads context.
+ * This class isn't thread safe and should never be used in a multi-threaded context.
  * </p>
  *
  * @author Colin Hebert
@@ -330,7 +330,7 @@ public final class ProducerBuilder {
     }
 
     //---------------------------------------------------------------------------------------------------------
-    // Access to informations
+    // Access to information
     //---------------------------------------------------------------------------------------------------------
 
     /**

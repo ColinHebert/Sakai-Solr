@@ -4,14 +4,12 @@ Sakai-Solr is an implementation of [Sakai Search](https://confluence.sakaiprojec
 [Apache Solr](http://lucene.apache.org/solr/) as the back end, instead of only lucene as provided in the default
 implementation.
 
-
 [![Build Status](https://secure.travis-ci.org/ColinHebert/Sakai-Solr.png?branch=search-1.5.x)](http://travis-ci.org/ColinHebert/Sakai-Solr)
 
 ### Structure
 
-The project is divided in three modules similar to the structure of many Sakai projects:
+The project is divided in two modules similar to the structure of many Sakai projects:
 
-- *assembly* gathers the content of every other modules in one assembly file which can easily be deployed.
 - *impl* contains the actual code of the Solr implementation.
 - *pack* is the module defining the [Spring](http://www.springsource.org/) configuration.
 
@@ -21,9 +19,9 @@ The project is divided in three modules similar to the structure of many Sakai p
 
 In order to provide indexable/searchable content, each project in Sakai can create an implementation of
 `EntityContentProducer`, which aggregate and transforms an object into an indexable resource.
-The content of those resources can be provided as a simple `String` or if required as a `Reader`.  
+The content of those resources can be provided as a simple `String` or if required as a `Reader`.
 
-Each `EntityContentProducer` registers itself throught the spring configuration to the `SearchIndexBuilder`.
+Each `EntityContentProducer` registers itself through the spring configuration to the `SearchIndexBuilder`.
 
 **Specific to this implementation (should be merged back in the API later)**
 
@@ -38,9 +36,9 @@ Each `EntityContentProducer` registers itself throught the spring configuration 
     - `CitationContentProducer` based on `ContentHostingContentProducer`, allows to index
     [citations](https://confluence.sakaiproject.org/display/RES/Citations+Helper).
 
-3. `EntityContentProducer` register themselves to `ContentProducerFactory` which will allow to retreive the right
+3. `EntityContentProducer` register themselves to `ContentProducerFactory` which will allow to retrieve the right
   `EntityContentProducer` later. For backward compatibility reasons, it's still possible to register the
-  `EntityContentProducer` on the `SearchIndexBuilder` which will transfert that to `ContentProducerFactory`.
+  `EntityContentProducer` on the `SearchIndexBuilder` which will transfer that to `ContentProducerFactory`.
 
 #### Indexation event
 
@@ -53,10 +51,12 @@ content.
 
 **Specific to this implementation**
 
-1. To handle every request as they come, a thread-pool as been set. Every event add a new task to a queue.
-2. Resource properties are converted to be compatible with solr field names (lower-case alphanum with underscores)
-3. Additional properties are stored in Solr as `property_` followed by the property name (to avoid collisions with solr
-settings)
+1. To handle every request as they come, a Task queueing system has been created. The queuing system may vary depending
+on the implementation. It is possible to use an AMQP server to queue tasks, or keep everything in memory and use an
+`ExecutorService` to execute the queued tasks.
+2. Resource properties are converted to be compatible with solr field names (lower-case alphanum with underscores).
+3. Additional properties are sent to Solr as `property_` followed by the property name (to avoid collisions with solr
+settings).
 
 #### Refresh and rebuild, index and sites
 
@@ -65,13 +65,14 @@ Two maintenance operations are available:
 -*Refresh* will only refresh what is already indexed and remove what doesn't exist anymore. New resources aren't indexed
 -*Rebuild* empties the index and reindex everything.
 
-Those two operations can be applied on sites or on the entire index.
+Those two operations can be applied individually on sites or on every site in the Sakai instance.
 
 **Specific to this implementation**
 
-As the indexation process, refresh and rebuild operations are added on the queue to be run as soon as possible
+Heavy Tasks (applied on every site within Sakai) are split in smaller tasks to run faster and possibly be distributed
+if there are many Sakai instances.
 
 ### The search process
 
 The search is straightforward, the search query is run against the given sites in `SearchService`.
-`SecuritySearchFilter` makes sure that every result is accessible, or censor it if necessary.
+`SecuritySearchFilter` makes sure that every result is accessible, or censors it if necessary.

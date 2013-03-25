@@ -40,7 +40,6 @@
     </fields>
     <uniqueKey>reference</uniqueKey>
     <defaultSearchField>text</defaultSearchField>
-    <solrQueryParser defaultOperator="AND"/>
     <copyField source="contents" dest="text"/>
     <copyField source="tool" dest="text"/>
     <copyField source="title" dest="text"/>

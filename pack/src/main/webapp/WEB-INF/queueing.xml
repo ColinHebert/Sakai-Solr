@@ -10,6 +10,7 @@
           abstract="true">
         <property name="securityService" ref="org.sakaiproject.authz.api.SecurityService"/>
         <property name="taskHandler" ref="org.sakaiproject.search.indexing.TaskHandler"/>
+        <property name="threadLocalManager" ref="org.sakaiproject.thread_local.api.ThreadLocalManager"/>
     </bean>
 
     <bean id="org.sakaiproject.search.queueing.IndexQueueingImpl" class="org.sakaiproject.search.queueing.IndexQueueingImpl"

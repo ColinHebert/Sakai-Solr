@@ -30,38 +30,25 @@ with the default implementation to this day.
 This implementation of Sakai Search works with solr in order to index and do
 full text search.
 
-It's recommended to use Solr 3.6.x with Solr-Cell
+It's recommended to use Solr 4.1.0
 
 An example of configuration for Solr is available in the
-`impl/src/main/test/Resources/solr/conf` directory.
-
-####Solr-Cell
-
-The [Solr-Cell](http://wiki.apache.org/solr/ExtractingRequestHandler) project is
-a component allowing solr to work with [Apache Tika](http://tika.apache.org/) in
-order to extract the content and metadata of different resources.
-
-The default implementation of Sakai Search also relies on Apache Tika to obtain
-the content of each document.
-
-Solr-Cell isn't set up by default and needs some dependencies provided in the
-`contrib/extraction` folder of the solr project.
+`impl/src/main/resources/org/sakaiproject/search/solr/conf/` directory.
 
 ####Request Handlers
 
-In order to work properly, Sakai-Solr relies on a few functionalities of Solr.
+In order to work properly, Sakai-Solr relies on a few features of Solr.
 Here are the URL used by Sakai-Solr and what is expected to be there
 
 - `/admin/stats`, for `SolrInfoMBeanHandler`, to obtain statistics about
-Solr, in particular the number of docs
-pending.
+Solr, in particular the number of docs pending.
 - `/admin/ping`, for `PingRequestHandler`, to check if the Solr server
 is alive
 - `/spell`, for `SearchHandler`, returns only SpellCheck information
-- `/search`, for `SearchHandler`, returns actual search results
+- `/select`, for `SearchHandler`, returns actual search results
+- `/get`, for `RealTimeGetHandler`, returns real time results used to handl
+concurrent modifications.
 - `/update`, for `XmlUpdateRequestHandler`, to insert new plain text entries.
-- `/update/extract`, for `ExtractingRequestHandler` (aka Solr-Cell), to insert
-new entries with an associated document.  
 
 ####Search Components
 
@@ -80,22 +67,33 @@ allows to highlight the parts of the result matching the search request.
 
 ####Solr Schema
 
-A default schema is provided, but in most cases some customisation is required.
+The basic details for each documents are handled in the default schema,
+additional properties are handled by the `property_*` field and are ignored
+by default.
 
-With the default configuration every additional properties on resources are stored as `property_propertyname`, for
-example `property_creationdate`.
-These properties are automatically handled by the dynamic field `property_*`, and by default are just ignored.
+To index and use the additional properties, either change the type of
+`property_*` to catch everything or individually add new fields.
 
-If one of these properties (say `creationdate`) should be indexed, adding a new field in the schema will be enough
+Eg. if the document provides a `creationDate` property, it will be sent to solr
+as `property_creationdate`.
+Adding a new field `property_creationdate` will capture the property directly
+(and it won't be sent to the wildcard field).
 
     <field name="property_creationdate" type="date" stored="true" />
 
-Sometimes having a property named `property_creationdate` isn't the best way to go. In that case it's possible to choose
+Sometimes the name of the field can be considered as important, in that case
+it's possible to create a field with a custom name:
+
+    <field name="creationdate" type="date" stored="true" />
+    <copyField source="property_creationdate" dest="creationdate" />
+
+
+isn't the best way to go. In that case it's possible to choose
 a custom name for the property:
 
     <field name="creationdate" type="date" stored="true" />
     <copyField source="property_creationdate" dest="creationdate" />
 
 
-Tika properties (document's metadata) will behave the same way but will be stored in `property_tika_*` instead (to avoid
-collisions).
+Tika properties (document's metadata) will behave the same way but will be
+stored in `property_tika_*` instead (to avoid collisions).

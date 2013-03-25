@@ -92,7 +92,7 @@ public class SolrSearchIndexBuilderTest {
 
     @Test
     public void testRebuildSite() throws Exception {
-        String siteId = "siteid";
+        String siteId = "siteId";
 
         solrSearchIndexBuilder.rebuildIndex(siteId);
 
@@ -102,7 +102,7 @@ public class SolrSearchIndexBuilderTest {
 
     @Test
     public void testRefreshSite() throws Exception {
-        String siteId = "siteid";
+        String siteId = "siteId";
 
         solrSearchIndexBuilder.refreshIndex(siteId);
 
