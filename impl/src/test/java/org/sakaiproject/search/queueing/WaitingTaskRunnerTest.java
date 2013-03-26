@@ -12,6 +12,8 @@ import org.sakaiproject.search.indexing.exception.TaskHandlingException;
 import org.sakaiproject.search.indexing.exception.TemporaryTaskHandlingException;
 import org.sakaiproject.thread_local.api.ThreadLocalManager;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -40,6 +42,12 @@ public class WaitingTaskRunnerTest {
         waitingTaskRunner.setThreadLocalManager(threadLocalManager);
     }
 
+    /**
+     * Attempts to throw one {@link TemporaryTaskHandlingException}.
+     * <p>
+     * Checks that it adds a new {@link Task} to the queueing system.
+     * </p>
+     */
     @Test
     public void testTemporaryExceptionQueueNewTask() {
         Task task = mock(Task.class);
@@ -50,6 +58,12 @@ public class WaitingTaskRunnerTest {
         verify(mockIndexQueueing).addTaskToQueue(task);
     }
 
+    /**
+     * Attempts to throw one {@link TaskHandlingException}.
+     * <p>
+     * Checks that it doesn't end up with a new task being added to the queue.
+     * </p>
+     */
     @Test
     public void testExceptionDontQueueNewTask() {
         doThrow(new TaskHandlingException()).when(mockTaskHandler).executeTask(any(Task.class));
@@ -59,22 +73,65 @@ public class WaitingTaskRunnerTest {
         verify(mockIndexQueueing, never()).addTaskToQueue(any(Task.class));
     }
 
+    /**
+     * Attempts to throw multiple {@link TemporaryTaskHandlingException}.
+     * <p>
+     * Checks that every temporary exception creates a new {@link Task} that is added back to the queue.
+     * </p>
+     */
     @Test
     public void testNestedExceptionWithTempExceptionQueueNewTask() {
-        doThrow(createNestedException(1, 0)).when(mockTaskHandler).executeTask(any(Task.class));
+        int numberOfTemporaryExceptions = 12;
+        int numberOfExceptions = 9;
+        doThrow(createNestedException(numberOfTemporaryExceptions, numberOfExceptions)).when(mockTaskHandler).executeTask(any(Task.class));
 
         waitingTaskRunner.runTask(mock(Task.class));
 
-        verify(mockIndexQueueing).addTaskToQueue(any(Task.class));
+        verify(mockIndexQueueing, times(numberOfTemporaryExceptions)).addTaskToQueue(any(Task.class));
     }
 
+    /**
+     * Attempts to throw multiple {@link TemporaryTaskHandlingException}.
+     * <p>
+     * Checks that the WaitingTaskRunner doesn't end up in a deadlock when multiple TemporaryTaskHandlingException
+     * are thrown at once.
+     * </p>
+     *
+     * @throws Exception should not happen.
+     */
     @Test
     public void testMultipleTemporaryExceptionUnlockOtherThreads() throws Exception {
+        int numberOfTemporaryExceptions = 12;
         Task failingTask = mock(Task.class);
-        doThrow(createNestedException(2, 0)).when(mockTaskHandler).executeTask(failingTask);
+        doThrow(createNestedException(numberOfTemporaryExceptions, 0)).when(mockTaskHandler).executeTask(failingTask);
 
-        executeTaskWithin(failingTask, 1000);
-        executeTaskWithin(mock(Task.class), 1000);
+        assertTaskExecutedWithin(failingTask, 1000);
+        assertTaskExecutedWithin(mock(Task.class), 1000);
+    }
+
+    /**
+     * Attempts to throw a {@link TemporaryTaskHandlingException} to stop the task handling threads.
+     * <p>
+     * Checks that a temporary exceptions results in the system stopping temporarily every thread.
+     * </p>
+     *
+     * @throws Exception should not happen.
+     */
+    @Test
+    public void testTemporaryExceptionStopsOtherThreads() throws Exception {
+        int waitingTime = 4000;
+        Task failingTask = mock(Task.class);
+        doThrow(new TemporaryTaskHandlingException(mock(Task.class))).when(mockTaskHandler).executeTask(failingTask);
+
+        Thread failingTaskThread;
+        do {
+            failingTaskThread = createSeparateTaskThread(failingTask);
+            failingTaskThread.start();
+            failingTaskThread.join(waitingTime);
+        } while (!failingTaskThread.isAlive());
+
+        assertTaskNotExecutedWithin(mock(Task.class), waitingTime/4);
+        assertTaskExecutedWithin(mock(Task.class), 2*waitingTime);
     }
 
     private NestedTaskHandlingException createNestedException(int temporaryExceptionsCount, int exceptionsCount) {
@@ -89,12 +146,18 @@ public class WaitingTaskRunnerTest {
         return nestedTaskHandlingException;
     }
 
-    private void executeTaskWithin(Task task, long millis) throws InterruptedException {
+    private void assertTaskExecutedWithin(Task task, long millis) throws InterruptedException {
         Thread separateTaskThread = createSeparateTaskThread(task);
         separateTaskThread.start();
         separateTaskThread.join(millis);
-        if (separateTaskThread.isAlive())
-            throw new IllegalThreadStateException("The task " + task + " should have been executed by now.");
+        assertFalse(separateTaskThread.isAlive());
+    }
+
+    private void assertTaskNotExecutedWithin(Task task, long millis) throws InterruptedException {
+        Thread separateTaskThread = createSeparateTaskThread(task);
+        separateTaskThread.start();
+        separateTaskThread.join(millis);
+        assertTrue(separateTaskThread.isAlive());
     }
 
     private Thread createSeparateTaskThread(final Task task) {
