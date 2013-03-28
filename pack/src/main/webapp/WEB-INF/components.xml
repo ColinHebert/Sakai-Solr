@@ -4,7 +4,8 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
     <alias alias="org.sakaiproject.search.indexing.TaskHandler"
            name="org.sakaiproject.search.solr.indexing.SolrSplitterProcesses"/>
-    <alias alias="org.sakaiproject.search.queueing.IndexQueueing" name="org.sakaiproject.search.queueing.IndexQueueingImpl"/>
+    <alias alias="org.sakaiproject.search.queueing.IndexQueueing"
+           name="org.sakaiproject.search.queueing.IndexQueueingImpl"/>
 
     <import resource="solr.xml"/>
     <import resource="queueing.xml"/>

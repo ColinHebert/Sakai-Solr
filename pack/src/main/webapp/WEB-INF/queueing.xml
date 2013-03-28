@@ -6,14 +6,16 @@
             http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
             http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd"
        default-lazy-init="true">
-    <bean id="org.sakaiproject.search.queueing.WaitingTaskRunner" class="org.sakaiproject.search.queueing.WaitingTaskRunner"
+    <bean id="org.sakaiproject.search.queueing.WaitingTaskRunner"
+          class="org.sakaiproject.search.queueing.WaitingTaskRunner"
           abstract="true">
         <property name="securityService" ref="org.sakaiproject.authz.api.SecurityService"/>
         <property name="taskHandler" ref="org.sakaiproject.search.indexing.TaskHandler"/>
         <property name="threadLocalManager" ref="org.sakaiproject.thread_local.api.ThreadLocalManager"/>
     </bean>
 
-    <bean id="org.sakaiproject.search.queueing.IndexQueueingImpl" class="org.sakaiproject.search.queueing.IndexQueueingImpl"
+    <bean id="org.sakaiproject.search.queueing.IndexQueueingImpl"
+          class="org.sakaiproject.search.queueing.IndexQueueingImpl"
           destroy-method="destroy" parent="org.sakaiproject.search.queueing.WaitingTaskRunner">
         <property name="indexingExecutor" ref="indexingExecutor"/>
         <property name="taskSplittingExecutor" ref="splittingExecutor"/>

@@ -49,6 +49,7 @@
         <property name="contentProducerFactory" ref="org.sakaiproject.search.producer.ContentProducerFactory"/>
     </bean>
 
-    <bean id="solrLookupServer" class="org.sakaiproject.search.solr.util.SolrServerAdapter" init-method="init" destroy-method="shutdown"/>
+    <bean id="solrLookupServer" class="org.sakaiproject.search.solr.util.SolrServerAdapter" init-method="init"
+          destroy-method="shutdown"/>
     <alias alias="solrIndexingServer" name="solrLookupServer"/>
 </beans>
