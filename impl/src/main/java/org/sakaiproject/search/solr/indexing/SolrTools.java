@@ -38,6 +38,10 @@ public class SolrTools {
     private static final String PROPERTY_PREFIX = "property_";
     private static final String UPREFIX = PROPERTY_PREFIX + "tika_";
     private static final Logger logger = LoggerFactory.getLogger(SolrTools.class);
+    /**
+     * Maximum number of characters retreived in a document parsed by Tika
+     */
+    private static final int MAX_STRING_LENGTH = 10000000;
     private SiteService siteService;
     private SearchIndexBuilder searchIndexBuilder;
     private ContentProducerFactory contentProducerFactory;
@@ -49,6 +53,7 @@ public class SolrTools {
      */
     public void init() {
         tika = new Tika();
+        tika.setMaxStringLength(MAX_STRING_LENGTH);
     }
 
     /**
