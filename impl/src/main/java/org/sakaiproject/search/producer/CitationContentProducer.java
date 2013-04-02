@@ -63,7 +63,7 @@ public class CitationContentProducer extends ContentHostingContentProducer {
 
     @Override
     public boolean matches(String reference) {
-        //A reference to a citation has always an instance of CitationService for entityProducer
+        // A reference to a citation has always an instance of CitationService for entityProducer
         return entityManager.newReference(reference).getEntityProducer() instanceof CitationService;
     }
 }

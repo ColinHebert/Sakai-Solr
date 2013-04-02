@@ -43,7 +43,7 @@ public class SolrSearchIndexBuilder implements SearchIndexBuilder {
         try {
             processEvent(event);
         } catch (Exception e) {
-            //addResource is directly related to the event system, it must not throw an exception.
+            // addResource is directly related to the event system, it must not throw an exception.
             logger.error("Event handling failed (this should NEVER happen)", e);
         }
     }
@@ -57,20 +57,20 @@ public class SolrSearchIndexBuilder implements SearchIndexBuilder {
         String resourceName = event.getResource();
         if (logger.isDebugEnabled())
             logger.debug("Attempt to add or remove a resource from the index '" + resourceName + "'");
-        //Set the resource name to empty instead of null
+        // Set the resource name to empty instead of null
         if (resourceName == null)
-            //TODO: Shouldn't addResource just stop there instead?
+            // TODO: Shouldn't addResource just stop there instead?
             resourceName = "";
 
         EntityContentProducer entityContentProducer = contentProducerFactory.getContentProducerForEvent(event);
-        //If there is no matching entity content producer or no associated site, return
+        // If there is no matching entity content producer or no associated site, return
         if (entityContentProducer == null) {
             if (logger.isDebugEnabled())
                 logger.debug("Can't find an entityContentProducer for '" + resourceName + "'");
             return;
         }
 
-        //If the indexing is only enabled on sites with search tool, check that the tool is actually enabled
+        // If the indexing is only enabled on sites with search tool, check that the tool is actually enabled
         if (isOnlyIndexSearchToolSites()) {
             String siteId = entityContentProducer.getSiteId(resourceName);
             try {
@@ -86,14 +86,14 @@ public class SolrSearchIndexBuilder implements SearchIndexBuilder {
             }
         }
 
-        //Create a task for the current event
+        // Create a task for the current event
         Task task;
         switch (entityContentProducer.getAction(event)) {
-            case 1: //SearchBuilderItem.ACTION_ADD
+            case 1: // SearchBuilderItem.ACTION_ADD
                 task = new DefaultTask(INDEX_DOCUMENT, event.getEventTime())
                         .setProperty(DefaultTask.REFERENCE, resourceName);
                 break;
-            case 2: //SearchBuilderItem.ACTION_DELETE
+            case 2: // SearchBuilderItem.ACTION_DELETE
                 task = new DefaultTask(REMOVE_DOCUMENT, event.getEventTime())
                         .setProperty(DefaultTask.REFERENCE, resourceName);
                 break;

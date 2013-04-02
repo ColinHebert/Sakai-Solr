@@ -64,14 +64,14 @@ public abstract class ContentHostingContentProducer implements EntityContentProd
     @Override
     public Integer getAction(Event event) {
         String eventName = event.getEvent();
-        //Skip the resourceType check if the event isn't about resources
+        // Skip the resourceType check if the event isn't about resources
         if (!EVENT_RESOURCE_REMOVE.equals(eventName) && !EVENT_RESOURCE_ADD.equals(eventName)
                 && !EVENT_RESOURCE_WRITE.equals(eventName))
             return SearchBuilderItem.ACTION_UNKNOWN;
 
         String resourceType = getResourceType(event.getResource());
-        //If the resource type isn't provided, assume that it's a document we want to delete, try to proceed.
-        //The resource type should always be provided, if it isn't assume that the document doesn't exist anymore.
+        // If the resource type isn't provided, assume that it's a document we want to delete, try to proceed.
+        // The resource type should always be provided, if it isn't assume that the document doesn't exist anymore.
         if (resourceType == null && EVENT_RESOURCE_REMOVE.equals(eventName) && isForIndexDelete(event.getResource())) {
             return SearchBuilderItem.ACTION_DELETE;
         } else if (isResourceTypeSupported(resourceType)
@@ -95,7 +95,7 @@ public abstract class ContentHostingContentProducer implements EntityContentProd
                 return null;
             return contentHostingService.getResource(getId(reference)).getResourceType();
         } catch (IdUnusedException e) {
-            //It isn't uncommon to have an old reference to some content that doesn't exist anymore
+            // It isn't uncommon to have an old reference to some content that doesn't exist anymore
             return null;
         } catch (Exception e) {
             throw new RuntimeException("Failed to resolve resource ", e);
@@ -127,7 +127,7 @@ public abstract class ContentHostingContentProducer implements EntityContentProd
         if (!"/".equals(siteCollection)) siteContent = contentHostingService.getAllResources(siteCollection);
         else siteContent = Collections.emptyList();
 
-        //Extract references withing the given site and return only the supported ones
+        // Extract references withing the given site and return only the supported ones
         Collection<String> contentReferences = new ArrayList<String>(siteContent.size());
         for (ContentResource contentResource : siteContent) {
             String reference = contentResource.getReference();
@@ -163,7 +163,7 @@ public abstract class ContentHostingContentProducer implements EntityContentProd
                 return false;
 
             ContentResource contentResource = contentHostingService.getResource(getId(reference));
-            //Only index files, not directories
+            // Only index files, not directories
             return contentResource != null && !contentResource.isCollection();
         } catch (IdUnusedException idun) {
             return false; // an unknown resource that cant be indexed

@@ -76,11 +76,11 @@ public class SolrSplitterProcesses implements TaskHandler {
             indexQueueing.addTaskToQueue(refreshSite);
         }
 
-        //Clean up the index by removing sites/documents that shouldn't be indexed anymore
+        // Clean up the index by removing sites/documents that shouldn't be indexed anymore
         Task removeAll = new SolrTask(REMOVE_ALL_DOCUMENTS, creationDate);
         indexQueueing.addTaskToQueue(removeAll);
-        //Start an optimisation when everything has been indexed.
-        //Even if the optimisation isn't exactly the very last operation to run, it's good enough
+        // Start an optimisation when everything has been indexed.
+        // Even if the optimisation isn't exactly the very last operation to run, it's good enough
         Task optimise = new SolrTask(OPTIMISE_INDEX, creationDate);
         indexQueueing.addTaskToQueue(optimise);
     }

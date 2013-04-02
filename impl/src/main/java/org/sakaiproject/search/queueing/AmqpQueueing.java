@@ -96,7 +96,7 @@ public class AmqpQueueing implements IndexQueueing {
         @Override
         public void shutdownCompleted(ShutdownSignalException cause) {
             synchronized (this) {
-                //TODO: Avoid looping reconnection?
+                // TODO: Avoid looping reconnection?
                 if (running)
                     init();
             }

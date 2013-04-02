@@ -22,7 +22,7 @@ import java.util.*;
  * @author Colin Hebert
  */
 public class TermVectorExtractor {
-    //Fields found in termVectorComponent
+    // Fields found in termVectorComponent
     private static final String TERM_VECTORS = "termVectors";
     private static final String DF = "df";
     private static final String TF = "tf";
@@ -71,10 +71,10 @@ public class TermVectorExtractor {
         Map<String, Map<String, Map<String, TermInfo>>> documents =
                 new HashMap<String, Map<String, Map<String, TermInfo>>>(termVectorInfoRaw.size());
         for (Map.Entry<String, Object> termVectorInfoEntryRaw : termVectorInfoRaw) {
-            //Ignore unique key field name and warnings
+            // Ignore unique key field name and warnings
             if (!UNIQUE_KEY_FIELD_NAME.equals(termVectorInfoEntryRaw.getKey())
                     && !WARNINGS.equals(termVectorInfoEntryRaw.getKey())) {
-                //From this point, the entry can be considered as always a document
+                // From this point, the entry can be considered as always a document
                 NamedList<Object> documentContentRaw = (NamedList<Object>) termVectorInfoEntryRaw.getValue();
                 String documentReference = (String) documentContentRaw.get(UNIQUE_KEY);
                 Map<String, Map<String, TermInfo>> fieldTerms = extractDocumentContent(documentContentRaw);
@@ -96,9 +96,9 @@ public class TermVectorExtractor {
         Map<String, Map<String, TermInfo>> fields =
                 new HashMap<String, Map<String, TermInfo>>(documentContentRaw.size());
         for (Map.Entry<String, Object> documentContentEntryRaw : documentContentRaw) {
-            //Ignore documentId, we already got that earlier
+            // Ignore documentId, we already got that earlier
             if (!UNIQUE_KEY.equals(documentContentEntryRaw.getKey())) {
-                //From this point, the entry can be considered as always a field in the document
+                // From this point, the entry can be considered as always a field in the document
                 NamedList<Object> fieldContentRaw = (NamedList<Object>) documentContentEntryRaw.getValue();
                 String fieldName = documentContentEntryRaw.getKey();
                 Map<String, TermInfo> terms = extractFieldContent(fieldContentRaw);

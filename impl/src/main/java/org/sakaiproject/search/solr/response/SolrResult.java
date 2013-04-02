@@ -175,11 +175,11 @@ public class SolrResult implements SearchResult {
      */
     private TermFrequency extractTermFrequency(Map<String, Map<String, TermInfo>> termsByField) {
         Map<String, Long> termFrequencies = new HashMap<String, Long>();
-        //Count the frequencies for each term, based on the sum of the frequency in each field
+        // Count the frequencies for each term, based on the sum of the frequency in each field
         for (Map<String, TermInfo> fieldTerms : termsByField.values()) {
             for (Map.Entry<String, TermInfo> fieldTerm : fieldTerms.entrySet()) {
                 Long addedFrequency = fieldTerm.getValue().getTermFrequency();
-                //Ignore when the frequency isn't specified (if tf isn't returned by solr)
+                // Ignore when the frequency isn't specified (if tf isn't returned by solr)
                 if (addedFrequency == null)
                     continue;
                 Long frequency = termFrequencies.get(fieldTerm.getKey());
@@ -188,9 +188,9 @@ public class SolrResult implements SearchResult {
             }
         }
 
-        //Sort tuples (Term/Frequency)
-        //A SortedSet consider that two elements that are equals based on compare are the same
-        //This is why, if the frequency is the same, then the term is used to do the comparison
+        // Sort tuples (Term/Frequency)
+        // A SortedSet consider that two elements that are equals based on compare are the same
+        // This is why, if the frequency is the same, then the term is used to do the comparison
         SortedSet<Map.Entry<String, Long>> sortedFrequencies = new TreeSet<Map.Entry<String, Long>>(
                 new Comparator<Map.Entry<String, Long>>() {
                     @Override
@@ -201,13 +201,13 @@ public class SolrResult implements SearchResult {
                 });
         sortedFrequencies.addAll(termFrequencies.entrySet());
 
-        //Extract data from each Entry into two arrays
+        // Extract data from each Entry into two arrays
         final String[] rawTerms = new String[sortedFrequencies.size()];
         final int[] frequencies = new int[sortedFrequencies.size()];
         int i = 0;
         for (Map.Entry<String, Long> term : sortedFrequencies) {
             rawTerms[i] = term.getKey();
-            //There is a huge loss in precision, but there should not be any issue with null values
+            // There is a huge loss in precision, but there should not be any issue with null values
             frequencies[i] = (int) (long) term.getValue();
             i++;
         }

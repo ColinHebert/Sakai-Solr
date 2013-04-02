@@ -39,7 +39,7 @@ public class SolrServerAdapter extends SolrServer {
     private static final String CORE_NAME = "search";
     private static final String SOLR_HOME_PROPERTY = "solr.solr.home";
     private static final String SOLR_CONFIGURATION_PATH = ServerConfigurationService.getSakaiHomePath() + "solr/";
-    private static final String SOLR_NODE_PATH = SOLR_CONFIGURATION_PATH + "search/conf/";
+    private static final String SOLR_CONFIGURATION_CLASSPATH = "/org/sakaiproject/search/solr/conf/";
     private static final Logger logger = LoggerFactory.getLogger(SolrServerAdapter.class);
     private SolrServer instance;
 
@@ -53,13 +53,8 @@ public class SolrServerAdapter extends SolrServer {
             instance = new HttpSolrServer(serverUrl);
         } else {
             logger.info("The Solr server isn't set up, using an embedded one");
-            if (!isConfigurationPresent()) {
-                try {
-                    createDefaultConfiguration();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+            if (!new File(SOLR_CONFIGURATION_PATH).exists())
+                createDefaultConfiguration();
 
             ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
@@ -72,57 +67,34 @@ public class SolrServerAdapter extends SolrServer {
 
     /**
      * Copies the default solr configuration in Sakai_home in order to use an embedded solr instance.
-     *
-     * @throws IOException
      */
-    private void createDefaultConfiguration() throws IOException {
+    private void createDefaultConfiguration() {
         logger.info("Setting up the embedded solr server for the first time");
-
-        File solrXmlFile = new File(SOLR_CONFIGURATION_PATH + "solr.xml");
-        if (logger.isDebugEnabled())
-            logger.debug("Copying '" + solrXmlFile.getPath() + "'");
-        solrXmlFile.createNewFile();
-        IOUtils.copy(
-                SolrServerAdapter.class.getResourceAsStream("/org/sakaiproject/search/solr/conf/solr.xml"),
-                new FileOutputStream(solrXmlFile));
-
-        File solrConfigFile = new File(SOLR_NODE_PATH + "solrconfig.xml");
-        if (logger.isDebugEnabled())
-            logger.debug("Copying '" + solrConfigFile.getPath() + "'");
-        solrConfigFile.createNewFile();
-        IOUtils.copy(
-                SolrServerAdapter.class.getResourceAsStream("/org/sakaiproject/search/solr/conf/search/solrconfig.xml"),
-                new FileOutputStream(solrConfigFile));
-
-        File schemaFile = new File(SOLR_NODE_PATH + "schema.xml");
-        if (logger.isDebugEnabled())
-            logger.debug("Copying '" + schemaFile.getPath() + "'");
-        schemaFile.createNewFile();
-        IOUtils.copy(
-                SolrServerAdapter.class.getResourceAsStream("/org/sakaiproject/search/solr/conf/search/schema.xml"),
-                new FileOutputStream(schemaFile));
+        copyFromClassPathToSolrHome("solr.xml");
+        copyFromClassPathToSolrHome("search/conf/solrconfig.xml");
+        copyFromClassPathToSolrHome("search/conf/schema.xml");
+        copyFromClassPathToSolrHome("search/conf/lang/stopwords_en.xml");
     }
 
     /**
-     * Checks whether the solr configuration is already in Sakai_home or not.
+     * Copies a solr configuration file from the classpath to the solr configuration path.
      *
-     * @return true if the configuration is already there, false otherwise.
+     * @param fileToCopy relative path of the file to copy.
      */
-    private boolean isConfigurationPresent() {
-        File nodeConfigDir = new File(SOLR_NODE_PATH);
+    private void copyFromClassPathToSolrHome(String fileToCopy) {
+        File destinationFile = new File(SOLR_CONFIGURATION_PATH + fileToCopy);
+        if (logger.isDebugEnabled())
+            logger.debug("Copying '" + fileToCopy + "' to '" + destinationFile.getPath() + "'");
 
-        //Check and create the directory if it isn't available
-        logger.error("Creating dirs '" + SOLR_CONFIGURATION_PATH + "'");
-        if (!nodeConfigDir.exists() && !nodeConfigDir.mkdirs() || !nodeConfigDir.isDirectory()) {
-            throw new IllegalStateException("The solr configuration directory '" + SOLR_CONFIGURATION_PATH + "' "
-                    + "couldn't be created");
+        try {
+            destinationFile.getParentFile().mkdirs();
+            destinationFile.createNewFile();
+
+            IOUtils.copy(SolrServerAdapter.class.getResourceAsStream(SOLR_CONFIGURATION_CLASSPATH + fileToCopy),
+                    new FileOutputStream(destinationFile));
+        } catch (IOException e) {
+            logger.error("Couldn't copy '" + fileToCopy + "' to '" + destinationFile.getPath() + "'", e);
         }
-
-        File solrXmlFile = new File(SOLR_CONFIGURATION_PATH + "solr.xml");
-        File solrConfigFile = new File(SOLR_NODE_PATH + "solrconfig.xml");
-        File solrSchemaFile = new File(SOLR_NODE_PATH + "schema.xml");
-
-        return solrXmlFile.exists() && solrConfigFile.exists() && solrSchemaFile.exists();
     }
 
     @Override

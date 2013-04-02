@@ -42,7 +42,8 @@ public class SolrTaskHandlerIT extends AbstractSolrTestCase {
     public static void beforeClass() throws Exception {
         initCore("org/sakaiproject/search/solr/conf/search/conf/solrconfig.xml",
                 "org/sakaiproject/search/solr/conf/search/conf/schema.xml",
-                "org/sakaiproject/search/solr/conf/search/");
+                "org/sakaiproject/search/solr/conf",
+                "search");
     }
 
     @Before
@@ -222,7 +223,7 @@ public class SolrTaskHandlerIT extends AbstractSolrTestCase {
                 .addDocsToSite(siteId, numberOfDocs);
         contentProducerFactory.addContentProducer(contentProducerBuilder.build());
         addSiteToIndex(siteId, DATE_1);
-        //Load the existing doc and change it, before re-adding it.
+        // Load the existing doc and change it, before re-adding it.
         ProducerBuilder.Document doc = contentProducerBuilder.getDocs().iterator().next();
         doc.setTitle("newTitle");
         contentProducerBuilder.addDoc(doc);

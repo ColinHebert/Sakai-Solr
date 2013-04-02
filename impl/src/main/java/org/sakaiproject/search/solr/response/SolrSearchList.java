@@ -38,11 +38,11 @@ public class SolrSearchList extends ForwardingList<SearchResult> implements Sear
 
         List<SearchResult> results = new ArrayList<SearchResult>(rsp.getResults().size());
 
-        //Extract TermVector information from the response
+        // Extract TermVector information from the response
         TermVectorExtractor termVectorExtractor = new TermVectorExtractor(rsp);
         Map<String, Map<String, Map<String, TermInfo>>> termsPerDocument = termVectorExtractor.getTermVectorInfo();
 
-        //Generate a SolrResult for each document
+        // Generate a SolrResult for each document
         for (SolrDocument document : rsp.getResults()) {
             String reference = (String) document.getFieldValue(SearchService.FIELD_REFERENCE);
 
@@ -50,13 +50,13 @@ public class SolrSearchList extends ForwardingList<SearchResult> implements Sear
             solrResult.setIndex(results.size());
             solrResult.setDocument(document);
 
-            //Not mandatory highlighting
+            // Not mandatory highlighting
             Map<String, List<String>> highlights = rsp.getHighlighting().get(reference);
             if (highlights == null)
                 highlights = Collections.emptyMap();
             solrResult.setHighlights(highlights);
 
-            //Not mandatory terms counting
+            // Not mandatory terms counting
             Map<String, Map<String, TermInfo>> terms = termsPerDocument.get(reference);
             if (terms == null)
                 terms = Collections.emptyMap();
@@ -72,7 +72,7 @@ public class SolrSearchList extends ForwardingList<SearchResult> implements Sear
     @Override
     public Iterator<SearchResult> iterator(int startAt) {
         Iterator<SearchResult> iterator = iterator();
-        //Skip the fist elements
+        // Skip the fist elements
         for (int i = 0; i < startAt && iterator.hasNext(); i++)
             iterator.next();
         return iterator;

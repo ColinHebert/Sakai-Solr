@@ -40,7 +40,7 @@ public class SolrTools {
     private static final String UPREFIX = PROPERTY_PREFIX + "tika_";
     private static final Logger logger = LoggerFactory.getLogger(SolrTools.class);
     /**
-     * Maximum number of characters retreived in a document parsed by Tika.
+     * Maximum number of characters retrieved in a document parsed by Tika.
      */
     private static final int MAX_STRING_LENGTH = 10000000;
     private SiteService siteService;
@@ -71,7 +71,7 @@ public class SolrTools {
 
         SolrInputDocument document = new SolrInputDocument();
 
-        //The date_stamp field should be automatically set by solr (default="NOW"), if it isn't set here
+        // The date_stamp field should be automatically set by solr (default="NOW"), if it isn't set here
         document.addField(SearchService.DATE_STAMP, actionDate);
         document.addField(SearchService.FIELD_REFERENCE, reference);
         document.addField(SearchService.FIELD_CONTAINER, contentProducer.getContainer(reference));
@@ -81,13 +81,13 @@ public class SolrTools {
         document.addField(SearchService.FIELD_URL, contentProducer.getUrl(reference));
         document.addField(SearchService.FIELD_SITEID, contentProducer.getSiteId(reference));
 
-        //Add the custom properties
+        // Add the custom properties
         Map<String, Collection<String>> properties = extractCustomProperties(reference, contentProducer);
         for (Map.Entry<String, Collection<String>> entry : properties.entrySet()) {
             document.addField(PROPERTY_PREFIX + entry.getKey(), entry.getValue());
         }
 
-        //Add the content
+        // Add the content
         if (contentProducer instanceof BinaryEntityContentProducer) {
             // A tika digested document adds content and metadata to the document.
             setDocumentTikaProperties(reference, document, (BinaryEntityContentProducer) contentProducer);
@@ -142,13 +142,13 @@ public class SolrTools {
                 metadata.add(Metadata.RESOURCE_NAME_KEY, resourceName);
             if (contentType != null)
                 metadata.add(Metadata.CONTENT_TYPE, contentType);
-            //Extract the content of the document (and additional properties in metadata)
+            // Extract the content of the document (and additional properties in metadata)
             if (contentStream != null) {
                 String documentContent = tika.parseToString(contentStream, metadata);
                 document.setField(SearchService.FIELD_CONTENTS, documentContent);
             }
 
-            //Add additional properties extracted by Tika to the document
+            // Add additional properties extracted by Tika to the document
             for (String metadataName : metadata.names())
                 for (String metadataValue : metadata.getValues(metadataName))
                     document.addField(UPREFIX + metadataName, metadataValue);
@@ -240,7 +240,7 @@ public class SolrTools {
      * Removes non-characters and non-printable characters from a String.
      *
      * @param input content containing non-characters or non-printable characters
-     * @return a String stripped from unuseable characters.
+     * @return a String stripped from unusable characters.
      */
     private String stripNonCharCodepoints(String input) {
         StringBuilder retVal = new StringBuilder();
@@ -248,7 +248,7 @@ public class SolrTools {
 
         for (int i = 0; i < input.length(); i++) {
             ch = input.charAt(i);
-            //CHECKSTYLE.OFF: MagicNumber - Characters are full of magic number, there is nothing to check here.
+            // CHECKSTYLE.OFF: MagicNumber - Characters are full of magic number, there is nothing to check here.
 
             // Strip all non-characters and non-printable control characters except tabulator,
             // new line and carriage return
@@ -261,7 +261,7 @@ public class SolrTools {
                 retVal.append(ch);
             }
 
-            //CHECKSTYLE.ON: MagicNumber
+            // CHECKSTYLE.ON: MagicNumber
         }
 
         return retVal.toString();
@@ -314,7 +314,7 @@ public class SolrTools {
             logger.debug("Obtaining indexed elements for site: '" + siteId + "'");
         SolrQuery query = new SolrQuery()
                 .setQuery(SearchService.FIELD_SITEID + ":" + ClientUtils.escapeQueryChars(siteId))
-                        //TODO: Use paging?
+                        // TODO: Use paging?
                 .setRows(Integer.MAX_VALUE)
                 .addField(SearchService.FIELD_REFERENCE);
 
@@ -339,7 +339,7 @@ public class SolrTools {
      * @return a queue of references for every document available within a site.
      */
     public Queue<String> getSiteDocumentsReferences(String siteId) {
-        //TODO: Replace by a lazy queuing system
+        // TODO: Replace by a lazy queuing system
         Queue<String> references = new LinkedList<String>();
 
         for (EntityContentProducer contentProducer : contentProducerFactory.getContentProducers()) {
