@@ -176,38 +176,37 @@ public class SolrTaskHandler implements TaskHandler {
      */
     public void refreshSite(String siteId, Date actionDate) {
         logger.info("Refreshing the index for '" + siteId + "'");
+        NestedTaskHandlingException nthe = new NestedTaskHandlingException(
+                "An exception occurred while indexing the site '" + siteId + "'");
+        //Get the currently indexed resources for this site
+        Queue<String> references;
         try {
-            NestedTaskHandlingException nthe = new NestedTaskHandlingException(
-                    "An exception occurred while indexing the site '" + siteId + "'");
-            //Get the currently indexed resources for this site
-            Queue<String> references;
-            try {
-                references = solrTools.getValidReferences(siteId);
-            } catch (Exception e) {
-                Task task = new DefaultTask(REFRESH_SITE, actionDate).setProperty(DefaultTask.SITE_ID, siteId);
-                throw wrapException(e, "Couldn't obtain the list of documents to refresh for '" + siteId + "'", task);
-            }
-            if (logger.isDebugEnabled())
-                logger.debug(references.size() + " elements will be refreshed");
-            while (!references.isEmpty()) {
-                try {
-                    indexDocument(references.poll(), actionDate);
-                } catch (TaskHandlingException t) {
-                    nthe.addTaskHandlingException(t);
-                }
+            references = solrTools.getValidReferences(siteId);
+        } catch (Exception e) {
+            Task task = new DefaultTask(REFRESH_SITE, actionDate).setProperty(DefaultTask.SITE_ID, siteId);
+            throw wrapException(e, "Couldn't obtain the list of documents to refresh for '" + siteId + "'", task);
+        }
 
-            }
+        if (logger.isDebugEnabled())
+            logger.debug(references.size() + " elements will be refreshed");
+
+        // Index already indexed documents
+        while (!references.isEmpty()) {
             try {
-                removeSiteDocuments(siteId, actionDate);
+                indexDocument(references.poll(), actionDate);
             } catch (TaskHandlingException t) {
                 nthe.addTaskHandlingException(t);
             }
-
-            if (!nthe.isEmpty()) throw nthe;
-        } finally {
-            //Clean up the localThread after each site
-            threadLocalManager.clear();
         }
+
+        // Remove documents that were indexed before
+        try {
+            removeSiteDocuments(siteId, actionDate);
+        } catch (TaskHandlingException t) {
+            nthe.addTaskHandlingException(t);
+        }
+
+        if (!nthe.isEmpty()) throw nthe;
     }
 
     /**
@@ -228,6 +227,9 @@ public class SolrTaskHandler implements TaskHandler {
                 indexSite(reindexedSites.poll(), actionDate);
             } catch (TaskHandlingException t) {
                 nthe.addTaskHandlingException(t);
+            } finally {
+                //Clean up the localThread after each site
+                threadLocalManager.clear();
             }
         }
         try {
@@ -259,6 +261,9 @@ public class SolrTaskHandler implements TaskHandler {
                 refreshSite(refreshedSites.poll(), actionDate);
             } catch (TaskHandlingException t) {
                 nthe.addTaskHandlingException(t);
+            } finally {
+                //Clean up the localThread after each site
+                threadLocalManager.clear();
             }
         }
         try {

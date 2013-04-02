@@ -17,7 +17,7 @@ public interface BinaryEntityContentProducer extends EntityContentProducer {
      * Generates a binary stream for the given reference.
      *
      * @param reference reference of the document
-     * @return binary stream to the content of the referenced document
+     * @return binary stream to the content of the referenced document, null if there is nothing to stream
      */
     InputStream getContentStream(String reference);
 

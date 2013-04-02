@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
 
@@ -136,13 +137,16 @@ public class SolrTools {
             Metadata metadata = new Metadata();
             String resourceName = binaryContentProducer.getResourceName(reference);
             String contentType = binaryContentProducer.getContentType(reference);
+            InputStream contentStream = binaryContentProducer.getContentStream(reference);
             if (resourceName != null)
                 metadata.add(Metadata.RESOURCE_NAME_KEY, resourceName);
             if (contentType != null)
                 metadata.add(Metadata.CONTENT_TYPE, contentType);
             //Extract the content of the document (and additional properties in metadata)
-            String documentContent = tika.parseToString(binaryContentProducer.getContentStream(reference), metadata);
-            document.setField(SearchService.FIELD_CONTENTS, documentContent);
+            if (contentStream != null) {
+                String documentContent = tika.parseToString(contentStream, metadata);
+                document.setField(SearchService.FIELD_CONTENTS, documentContent);
+            }
 
             //Add additional properties extracted by Tika to the document
             for (String metadataName : metadata.names())
