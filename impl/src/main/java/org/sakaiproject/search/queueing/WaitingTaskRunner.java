@@ -69,13 +69,13 @@ public abstract class WaitingTaskRunner implements TaskRunner {
                 // If there is no exceptions, reset the timer
                 waitingTime = BASE_WAITING_TIME;
             } catch (NestedTaskHandlingException e) {
-                logger.warn("Some exceptions happened during the execution of '" + task + "'.");
-                unfoldNestedTaskException(e);
+                logger.warn("Some exceptions happened during the execution of '{}'.", task);
+                unfoldNestedTaskException(e, task);
             } catch (TemporaryTaskHandlingException e) {
-                logger.warn("Couldn't execute task '" + task + "'.", e);
+                logger.warn("Couldn't execute task '{}'.", task, e);
                 handleTemporaryTaskHandlingException(e);
             } catch (Exception e) {
-                logger.error("Couldn't execute task '" + task + "'.", e);
+                logger.error("Couldn't execute task '{}'.", task, e);
             }
 
             // A TemporaryTaskException occurred, stop everything for a while (so the search server can recover)
@@ -83,7 +83,7 @@ public abstract class WaitingTaskRunner implements TaskRunner {
                 initiateLockdown();
 
         } catch (InterruptedException e) {
-            logger.error("Thread interrupted while trying to do '" + task + "'.", e);
+            logger.error("Thread interrupted while trying to do '{}'.", task, e);
             indexQueueing.addTaskToQueue(task);
         } finally {
             // Lock permissions to avoid security issues
@@ -108,11 +108,9 @@ public abstract class WaitingTaskRunner implements TaskRunner {
         // Stop for a while because some tasks failed and should be run again.
         synchronized (taskRunnerLock) {
             while (taskRunnerLock.isLocked()) {
-                if (logger.isDebugEnabled())
-                    logger.debug("Indexation system on lockdown due to a temporary failure of the system.");
+                logger.debug("Indexation system on lockdown due to a temporary failure of the system.");
                 taskRunnerLock.wait();
-                if (logger.isDebugEnabled())
-                    logger.debug("Lockdown terminated, ready to process new tasks.");
+                logger.debug("Lockdown terminated, ready to process new tasks.");
             }
         }
     }
@@ -124,7 +122,7 @@ public abstract class WaitingTaskRunner implements TaskRunner {
      */
     private void initiateLockdown() throws InterruptedException {
         logger.warn("A temporary exception has been caught, "
-                + "put the indexation system on lockdown for " + waitingTime + "ms.");
+                + "put the indexation system on lockdown for {}ms.", waitingTime);
         Thread.sleep(waitingTime);
         // Multiply the waiting time by two
         if (waitingTime <= maximumWaitingTime)
@@ -135,8 +133,7 @@ public abstract class WaitingTaskRunner implements TaskRunner {
      * Terminates the lockdown, resuming tasks running.
      */
     private void terminateLockdown() {
-        if (logger.isDebugEnabled())
-            logger.info("Lockdown terminated, restart all the indexing threads.");
+        logger.info("Lockdown terminated, restart all the indexing threads.");
         synchronized (taskRunnerLock) {
             taskRunnerLock.notifyAll();
             taskRunnerLock.unlock();
@@ -148,12 +145,12 @@ public abstract class WaitingTaskRunner implements TaskRunner {
      *
      * @param e NestedTaskHandlingException to unfold.
      */
-    private void unfoldNestedTaskException(NestedTaskHandlingException e) {
+    private void unfoldNestedTaskException(NestedTaskHandlingException e, Task task) {
         for (TaskHandlingException t : e.getTaskHandlingExceptions()) {
             if (t instanceof TemporaryTaskHandlingException) {
                 handleTemporaryTaskHandlingException((TemporaryTaskHandlingException) t);
             } else {
-                logger.error("An exception occurred during the task execution.", t);
+                logger.error("An exception occurred during the execution of '{}'.", task, t);
             }
         }
     }
@@ -170,8 +167,8 @@ public abstract class WaitingTaskRunner implements TaskRunner {
         // Check that the lock isn't already held by the current thread (do not lock twice!)
         if (!taskRunnerLock.isHeldByCurrentThread())
             taskRunnerLock.tryLock();
-        logger.info("A task failed because of a temporary exception. "
-                + "'" + tthe.getNewTask() + "' will be executed later", tthe);
+        logger.info("A task failed because of a temporary exception. '{}' will be executed later",
+                tthe.getNewTask(), tthe);
         indexQueueing.addTaskToQueue(tthe.getNewTask());
     }
 

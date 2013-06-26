@@ -55,8 +55,7 @@ public class SolrSearchIndexBuilder implements SearchIndexBuilder {
      */
     private void processEvent(Event event) {
         String resourceName = event.getResource();
-        if (logger.isDebugEnabled())
-            logger.debug("Attempt to add or remove a resource from the index '" + resourceName + "'");
+        logger.debug("Attempt to add or remove a resource from the index '{}'", resourceName);
         // Set the resource name to empty instead of null
         if (resourceName == null)
             // TODO: Shouldn't addResource just stop there instead?
@@ -65,8 +64,7 @@ public class SolrSearchIndexBuilder implements SearchIndexBuilder {
         EntityContentProducer entityContentProducer = contentProducerFactory.getContentProducerForEvent(event);
         // If there is no matching entity content producer or no associated site, return
         if (entityContentProducer == null) {
-            if (logger.isDebugEnabled())
-                logger.debug("Can't find an entityContentProducer for '" + resourceName + "'");
+            logger.debug("Can't find an entityContentProducer for '{}'", resourceName);
             return;
         }
 
@@ -75,13 +73,12 @@ public class SolrSearchIndexBuilder implements SearchIndexBuilder {
             String siteId = entityContentProducer.getSiteId(resourceName);
             try {
                 if (siteService.getSite(siteId).getToolForCommonId(SEARCH_TOOL_ID) == null) {
-                    if (logger.isDebugEnabled())
-                        logger.debug("Impossible to index the content of the site '" + siteId + "'"
-                                + "because the search tool hasn't been added");
+                    logger.debug("Impossible to index the content of the site '{}'"
+                            + "because the search tool hasn't been added", siteId);
                     return;
                 }
             } catch (IdUnusedException e) {
-                logger.warn("Couldn't find the site '" + siteId + "'", e);
+                logger.warn("Couldn't find the site '{}'", siteId, e);
                 return;
             }
         }
@@ -101,8 +98,7 @@ public class SolrSearchIndexBuilder implements SearchIndexBuilder {
                 throw new UnsupportedOperationException("Unsupported action " + entityContentProducer.getAction(event)
                         + " is not yet supported");
         }
-        if (logger.isDebugEnabled())
-            logger.debug("Add the task '" + task + "' to the queuing system");
+        logger.debug("Add the task '{}' to the queuing system", task);
         indexQueueing.addTaskToQueue(task);
     }
 
@@ -154,8 +150,7 @@ public class SolrSearchIndexBuilder implements SearchIndexBuilder {
     public void refreshIndex(String currentSiteId) {
         Task task = new DefaultTask(REFRESH_SITE)
                 .setProperty(DefaultTask.SITE_ID, currentSiteId);
-        if (logger.isDebugEnabled())
-            logger.debug("Add the task '" + task + "' to the queuing system");
+        logger.debug("Add the task '{}' to the queuing system", task);
         indexQueueing.addTaskToQueue(task);
     }
 
@@ -163,16 +158,14 @@ public class SolrSearchIndexBuilder implements SearchIndexBuilder {
     public void rebuildIndex(String currentSiteId) {
         Task task = new DefaultTask(INDEX_SITE)
                 .setProperty(DefaultTask.SITE_ID, currentSiteId);
-        if (logger.isDebugEnabled())
-            logger.debug("Add the task '" + task + "' to the queuing system");
+        logger.debug("Add the task '{}' to the queuing system", task);
         indexQueueing.addTaskToQueue(task);
     }
 
     @Override
     public void refreshIndex() {
         Task task = new DefaultTask(REFRESH_ALL);
-        if (logger.isDebugEnabled())
-            logger.debug("Add the task '" + task + "' to the queuing system");
+        logger.debug("Add the task '{}' to the queuing system", task);
         indexQueueing.addTaskToQueue(task);
     }
 
@@ -184,8 +177,7 @@ public class SolrSearchIndexBuilder implements SearchIndexBuilder {
     @Override
     public void rebuildIndex() {
         Task task = new DefaultTask(INDEX_ALL);
-        if (logger.isDebugEnabled())
-            logger.debug("Add the task '" + task + "' to the queuing system");
+        logger.debug("Add the task '{}' to the queuing system", task);
         indexQueueing.addTaskToQueue(task);
     }
 

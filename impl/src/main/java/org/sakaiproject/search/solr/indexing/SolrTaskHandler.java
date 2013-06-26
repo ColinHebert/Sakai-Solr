@@ -40,8 +40,7 @@ public class SolrTaskHandler implements TaskHandler {
 
     @Override
     public void executeTask(Task task) {
-        if (logger.isDebugEnabled())
-            logger.debug("Attempt to handle '" + task + "'");
+        logger.debug("Attempt to handle '{}'", task);
         try {
             String taskType = task.getType();
             if (INDEX_DOCUMENT.getTypeName().equals(taskType)) {
@@ -80,8 +79,7 @@ public class SolrTaskHandler implements TaskHandler {
      * @param actionDate creation date of the task.
      */
     public void indexDocument(String reference, Date actionDate) {
-        if (logger.isDebugEnabled())
-            logger.debug("Add '" + reference + "' to the index");
+        logger.debug("Add '{}' to the index", reference);
 
         try {
             // Real-time get the last version of the document
@@ -94,8 +92,7 @@ public class SolrTaskHandler implements TaskHandler {
             // Check if the document exists and hasn't been indexed since the creation of the task
             if (currentDocument != null
                     && actionDate.compareTo((Date) currentDocument.getFieldValue(SearchService.DATE_STAMP)) <= 0) {
-                if (logger.isDebugEnabled())
-                    logger.debug("Indexation not useful as the document was updated earlier");
+                logger.debug("Indexation not useful as the document was updated earlier");
                 return;
             }
 
@@ -103,8 +100,7 @@ public class SolrTaskHandler implements TaskHandler {
             if (currentDocument != null) {
                 document.setField(VERSION_FIELD, currentDocument.getFieldValue(VERSION_FIELD));
             }
-            if (logger.isDebugEnabled())
-                logger.debug("Adding the document '" + document + "'");
+            logger.debug("Adding the document '{}'", document);
             solrServer.add(document);
         } catch (Exception e) {
             Task task = new DefaultTask(INDEX_DOCUMENT, actionDate).setProperty(DefaultTask.REFERENCE, reference);
@@ -122,8 +118,7 @@ public class SolrTaskHandler implements TaskHandler {
      * @param actionDate creation date of the task.
      */
     public void removeDocument(String reference, Date actionDate) {
-        if (logger.isDebugEnabled())
-            logger.debug("Remove '" + reference + "' from the index");
+        logger.debug("Remove '{}' from the index", reference);
         try {
             solrServer.deleteByQuery(
                     SearchService.DATE_STAMP + ":{* TO " + solrTools.format(actionDate) + "} AND "
@@ -144,7 +139,7 @@ public class SolrTaskHandler implements TaskHandler {
      * @param actionDate creation date of the task.
      */
     public void indexSite(final String siteId, Date actionDate) {
-        logger.info("Rebuilding the index for '" + siteId + "'");
+        logger.info("Rebuilding the index for '{}'", siteId);
         NestedTaskHandlingException nthe = new NestedTaskHandlingException(
                 "An exception occurred while indexing the site '" + siteId + "'");
         Queue<String> siteReferences = solrTools.getSiteDocumentsReferences(siteId);
@@ -175,7 +170,7 @@ public class SolrTaskHandler implements TaskHandler {
      * @param actionDate creation date of the task to execute
      */
     public void refreshSite(String siteId, Date actionDate) {
-        logger.info("Refreshing the index for '" + siteId + "'");
+        logger.info("Refreshing the index for '{}'", siteId);
         NestedTaskHandlingException nthe = new NestedTaskHandlingException(
                 "An exception occurred while indexing the site '" + siteId + "'");
         // Get the currently indexed resources for this site
@@ -187,8 +182,7 @@ public class SolrTaskHandler implements TaskHandler {
             throw wrapException(e, "Couldn't obtain the list of documents to refresh for '" + siteId + "'", task);
         }
 
-        if (logger.isDebugEnabled())
-            logger.debug(references.size() + " elements will be refreshed");
+        logger.debug("{} elements will be refreshed", references.size());
 
         // Index already indexed documents
         while (!references.isEmpty()) {
@@ -290,7 +284,7 @@ public class SolrTaskHandler implements TaskHandler {
      * @param creationDate creation date of the task.
      */
     public void removeSiteDocuments(String siteId, Date creationDate) {
-        logger.info("Remove old documents from '" + siteId + "'");
+        logger.info("Remove old documents from '{}'", siteId);
         try {
             solrServer.deleteByQuery(
                     SearchService.DATE_STAMP + ":{* TO " + solrTools.format(creationDate) + "} AND "
@@ -347,6 +341,7 @@ public class SolrTaskHandler implements TaskHandler {
         } else if (e instanceof SolrException
                 && (((SolrException) e).code() == SolrException.ErrorCode.SERVICE_UNAVAILABLE.code
                 || ((SolrException) e).code() == SolrException.ErrorCode.SERVER_ERROR.code
+                || ((SolrException) e).code() == SolrException.ErrorCode.NOT_FOUND.code
                 || ((SolrException) e).code() == SolrException.ErrorCode.CONFLICT.code)) {
             return new TemporaryTaskHandlingException(message, e, potentialNewTask);
         } else if (e instanceof IOException) {

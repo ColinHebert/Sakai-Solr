@@ -68,8 +68,7 @@ public class AmqpRunner extends WaitingTaskRunner {
     private Task deserialize(byte[] message) {
         ObjectInputStream ois = null;
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(message);
-            ois = new ObjectInputStream(bais);
+            ois = new ObjectInputStream(new ByteArrayInputStream(message));
             return (Task) ois.readObject();
         } catch (Exception e) {
             logger.error("Couldn't deserialize the content", e);

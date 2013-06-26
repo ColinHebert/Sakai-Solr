@@ -25,8 +25,8 @@ public class ContentProducerFactory {
      * @param contentProducer entityContentProducer to register
      */
     public void addContentProducer(EntityContentProducer contentProducer) {
-        logger.info(contentProducer.getClass() + " registered to provide content to the search index from "
-                + contentProducer.getTool());
+        logger.info("{} registered to provide content to the search index from {}",
+                contentProducer.getClass(), contentProducer.getTool());
         contentProducers.add(contentProducer);
     }
 
@@ -37,21 +37,19 @@ public class ContentProducerFactory {
      * @return an {@link EntityContentProducer} matching the reference, or null if nothing has been found
      */
     public EntityContentProducer getContentProducerForElement(String reference) {
-        if (logger.isDebugEnabled())
-            logger.debug("Looking for a contentProducer for '" + reference + "'");
+        logger.debug("Looking for a contentProducer for '{}'", reference);
         for (EntityContentProducer contentProducer : contentProducers) {
             try {
                 if (contentProducer.matches(reference)) {
-                    if (logger.isDebugEnabled())
-                        logger.debug("The content producer '" + contentProducer + "'"
-                                + "matches the reference '" + reference + "'");
+                    logger.debug("The content producer '{}' matches the reference '{}'",
+                            contentProducer, reference);
                     return contentProducer;
                 }
             } catch (Exception e) {
-                logger.warn("The content producer '" + contentProducer + "' has thrown an exception", e);
+                logger.warn("The content producer '{}' has thrown an exception", contentProducer, e);
             }
         }
-        logger.info("Couldn't find a content producer for reference '" + reference + "'");
+        logger.info("Couldn't find a content producer for reference '{}'", reference);
         return null;
     }
 
@@ -65,17 +63,15 @@ public class ContentProducerFactory {
         for (EntityContentProducer contentProducer : contentProducers) {
             try {
                 if (contentProducer.matches(event)) {
-                    if (logger.isDebugEnabled())
-                        logger.debug("The content producer '" + contentProducer + "'"
-                                + "matches the event '" + event + "'");
+                    logger.debug("The content producer '{}' matches the event '{}'", contentProducer, event);
                     return contentProducer;
                 }
             } catch (Exception e) {
                 // If the matches method throws an exception, log it and continue to look for a contentProducer
-                logger.info("The content producer '" + contentProducer + "' has thrown an exception", e);
+                logger.info("The content producer '{}' has thrown an exception", contentProducer, e);
             }
         }
-        logger.warn("Couldn't find a content producer for event '" + event + "'");
+        logger.warn("Couldn't find a content producer for event '{}'", event);
         return null;
     }
 

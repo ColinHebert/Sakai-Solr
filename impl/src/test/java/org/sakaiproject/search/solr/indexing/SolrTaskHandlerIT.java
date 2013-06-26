@@ -30,7 +30,7 @@ import static org.mockito.Mockito.mock;
  *
  * @author Colin Hebert
  */
-@org.apache.lucene.util.LuceneTestCase.SuppressCodecs({"Lucene3x", "Lucene40"})
+@org.apache.lucene.util.LuceneTestCase.SuppressCodecs({"Lucene3x", "Lucene40", "Lucene41", "Lucene42"})
 public class SolrTaskHandlerIT extends AbstractSolrTestCase {
     public static final Date DATE_1 = new DateTime(2013, 3, 10, 16, 0, 0).toDate();
     public static final Date DATE_2 = new DateTime(2013, 3, 10, 17, 0, 0).toDate();

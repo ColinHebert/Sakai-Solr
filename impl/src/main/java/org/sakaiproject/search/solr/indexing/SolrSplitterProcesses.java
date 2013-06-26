@@ -39,8 +39,7 @@ public class SolrSplitterProcesses implements TaskHandler {
     @Override
     public void executeTask(Task task) {
         try {
-            if (logger.isDebugEnabled())
-                logger.debug("Attempt to handle '" + task + "'");
+            logger.debug("Attempt to handle '{}'", task);
             String taskType = task.getType();
             if (INDEX_ALL.getTypeName().equals(taskType)) {
                 createTaskForEverySite(INDEX_SITE, task.getCreationDate());

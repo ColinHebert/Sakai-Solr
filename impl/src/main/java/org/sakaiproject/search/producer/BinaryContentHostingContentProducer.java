@@ -6,6 +6,7 @@ import org.sakaiproject.search.api.StoredDigestContentProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.List;
@@ -52,12 +53,20 @@ public class BinaryContentHostingContentProducer extends ContentHostingContentPr
     @Override
     @Deprecated
     public String getContent(String reference) {
+        InputStream contentStream = null;
         try {
-            InputStream contentStream = getContentStream(reference);
+            contentStream = getContentStream(reference);
             return contentStream == null ? "" : tika.parseToString(contentStream);
         } catch (Exception e) {
-            logger.error("Error while trying to get the content of '" + reference + "' with tika", e);
+            logger.error("Error while trying to get the content of '{}' with tika", reference, e);
             return "";
+        } finally {
+            try {
+                if (contentStream != null)
+                    contentStream.close();
+            } catch (IOException e) {
+                logger.error("Error while closing the contentStream", e);
+            }
         }
     }
 
@@ -73,8 +82,9 @@ public class BinaryContentHostingContentProducer extends ContentHostingContentPr
             contentResource = contentHostingService.getResource(getId(reference));
 
             if (contentResource.getContentLength() > documentMaximumSize) {
-                logger.info("The document '" + reference + "' is bigger (" + contentResource.getContentLength() + "B) "
-                        + "than the maximum size " + documentMaximumSize + "B, its content won't be indexed.");
+                logger.info("The document '{}' is bigger ({}B) than the maximum size {}B, "
+                        + "its content won't be indexed.",
+                        reference, contentResource.getContentLength(), documentMaximumSize);
                 return null;
             } else {
                 return contentResource.streamContent();
@@ -89,7 +99,7 @@ public class BinaryContentHostingContentProducer extends ContentHostingContentPr
         try {
             return contentHostingService.getResource(getId(reference)).getContentType();
         } catch (Exception e) {
-            logger.info("Couldn't get the contentType of '" + reference + "'");
+            logger.info("Couldn't get the contentType of '{}'", reference);
             return null;
         }
     }
@@ -99,7 +109,7 @@ public class BinaryContentHostingContentProducer extends ContentHostingContentPr
         try {
             return contentHostingService.getResource(getId(reference)).getReference();
         } catch (Exception e) {
-            logger.info("Couldn't get the contentType of '" + reference + "'");
+            logger.info("Couldn't get the contentType of '{}'", reference);
             return null;
         }
     }
