@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.Queue;
 
 import static org.sakaiproject.search.indexing.DefaultTask.Type.*;
-import static org.sakaiproject.search.solr.indexing.SolrTask.Type.OPTIMISE_INDEX;
 import static org.sakaiproject.search.solr.indexing.SolrTask.Type.REMOVE_ALL_DOCUMENTS;
 
 /**
@@ -61,9 +60,6 @@ public class SolrSplitterProcesses implements TaskHandler {
      * <p>
      * This allows to create a repetitive task such as "reindex site" for every site.
      * </p>
-     * <p>
-     * Once the tasks have been created, cleanup and an optimisation tasks are added.
-     * </p>
      *
      * @param taskType     type of the task to create.
      * @param creationDate creation date of the task (should be the same as the original task).
@@ -78,10 +74,6 @@ public class SolrSplitterProcesses implements TaskHandler {
         // Clean up the index by removing sites/documents that shouldn't be indexed anymore
         Task removeAll = new SolrTask(REMOVE_ALL_DOCUMENTS, creationDate);
         indexQueueing.addTaskToQueue(removeAll);
-        // Start an optimisation when everything has been indexed.
-        // Even if the optimisation isn't exactly the very last operation to run, it's good enough
-        Task optimise = new SolrTask(OPTIMISE_INDEX, creationDate);
-        indexQueueing.addTaskToQueue(optimise);
     }
 
     public void setActualTaskHandler(TaskHandler actualTaskHandler) {

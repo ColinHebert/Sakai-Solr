@@ -104,7 +104,6 @@ public class SolrSplitterProcessesTest {
      * <p>
      * Checks that the task is split in multiple subtasks.<br />
      * Checks that a "RemoveAll" task has been created.<br />
-     * Checks that an "OptimiseIndex" task has been created.<br />
      * Checks that an "IndexSite" task has been created for each site available.
      * </p>
      */
@@ -114,14 +113,12 @@ public class SolrSplitterProcessesTest {
         when(task.getType()).thenReturn(DefaultTask.Type.INDEX_ALL.getTypeName());
         when(mockSolrTools.getIndexableSites()).thenReturn(indexableSites);
         int indexableSitesSize = indexableSites.size();
-        int numberOfTasks = indexableSitesSize + 2;
+        int numberOfTasks = indexableSitesSize + 1;
         solrSplitterProcesses.executeTask(task);
 
         verify(mockIndexQueueing, times(numberOfTasks)).addTaskToQueue(any(Task.class));
         verify(mockIndexQueueing).addTaskToQueue(
                 argThat(new TaskMatcher(SolrTask.Type.REMOVE_ALL_DOCUMENTS.getTypeName())));
-        verify(mockIndexQueueing).addTaskToQueue(
-                argThat(new TaskMatcher(SolrTask.Type.OPTIMISE_INDEX.getTypeName())));
         verify(mockIndexQueueing, times(indexableSitesSize)).addTaskToQueue(
                 argThat(new TaskMatcher(DefaultTask.Type.INDEX_SITE.getTypeName())));
     }
@@ -131,7 +128,6 @@ public class SolrSplitterProcessesTest {
      * <p>
      * Checks that the task is split in multiple subtasks.<br />
      * Checks that a "RemoveAll" task has been created.<br />
-     * Checks that an "OptimiseIndex" task has been created.<br />
      * Checks that an "RefreshSite" task has been created for each site available.
      * </p>
      */
@@ -141,14 +137,12 @@ public class SolrSplitterProcessesTest {
         when(task.getType()).thenReturn(DefaultTask.Type.REFRESH_ALL.getTypeName());
         when(mockSolrTools.getIndexableSites()).thenReturn(indexableSites);
         int indexableSitesSize = indexableSites.size();
-        int numberOfTasks = indexableSitesSize + 2;
+        int numberOfTasks = indexableSitesSize + 1;
         solrSplitterProcesses.executeTask(task);
 
         verify(mockIndexQueueing, times(numberOfTasks)).addTaskToQueue(any(Task.class));
         verify(mockIndexQueueing).addTaskToQueue(
                 argThat(new TaskMatcher(SolrTask.Type.REMOVE_ALL_DOCUMENTS.getTypeName())));
-        verify(mockIndexQueueing).addTaskToQueue(
-                argThat(new TaskMatcher(SolrTask.Type.OPTIMISE_INDEX.getTypeName())));
         verify(mockIndexQueueing, times(indexableSitesSize)).addTaskToQueue(
                 argThat(new TaskMatcher(DefaultTask.Type.REFRESH_SITE.getTypeName())));
     }
